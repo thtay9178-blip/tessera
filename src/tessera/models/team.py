@@ -27,10 +27,12 @@ class TeamUpdate(BaseModel):
     metadata: dict[str, Any] | None = None
 
 
-class Team(TeamBase):
+class Team(BaseModel):
     """Team entity."""
 
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    name: str
+    metadata: dict[str, Any] = Field(default_factory=dict, validation_alias="metadata_")
     created_at: datetime

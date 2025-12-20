@@ -1,0 +1,4425 @@
+{
+  "metadata": {
+    "dbt_schema_version": "https://schemas.getdbt.com/dbt/manifest/v11.json",
+    "dbt_version": "1.7.4",
+    "generated_at": "2025-12-20T14:01:14.413900Z",
+    "invocation_id": "tessera-test-manifest",
+    "project_name": "ecommerce",
+    "project_id": "ecommerce-analytics",
+    "user_id": null,
+    "send_anonymous_usage_stats": false
+  },
+  "nodes": {
+    "model.ecommerce.stg_stripe_payments": {
+      "unique_id": "model.ecommerce.stg_stripe_payments",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_stripe_payments",
+      "alias": "stg_stripe_payments",
+      "description": "Staged Stripe payments with standardized column names",
+      "columns": {
+        "payment_id": {
+          "description": "Unique payment identifier"
+        },
+        "amount_cents": {
+          "description": "Payment amount in cents"
+        },
+        "currency": {
+          "description": "ISO currency code"
+        },
+        "status": {
+          "description": "Payment status"
+        },
+        "created_at": {
+          "description": "Payment creation timestamp"
+        }
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.stripe.payments"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_stripe_payments.sql"
+    },
+    "model.ecommerce.stg_stripe_refunds": {
+      "unique_id": "model.ecommerce.stg_stripe_refunds",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_stripe_refunds",
+      "alias": "stg_stripe_refunds",
+      "description": "Staged Stripe refunds",
+      "columns": {
+        "refund_id": {},
+        "payment_id": {},
+        "amount_cents": {},
+        "reason": {},
+        "created_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.stripe.refunds"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_stripe_refunds.sql"
+    },
+    "model.ecommerce.stg_stripe_customers": {
+      "unique_id": "model.ecommerce.stg_stripe_customers",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_stripe_customers",
+      "alias": "stg_stripe_customers",
+      "description": "Staged Stripe customers",
+      "columns": {
+        "stripe_customer_id": {},
+        "email": {},
+        "name": {},
+        "created_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.stripe.customers"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_stripe_customers.sql"
+    },
+    "model.ecommerce.stg_stripe_subscriptions": {
+      "unique_id": "model.ecommerce.stg_stripe_subscriptions",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_stripe_subscriptions",
+      "alias": "stg_stripe_subscriptions",
+      "description": "Staged Stripe subscriptions",
+      "columns": {
+        "subscription_id": {},
+        "customer_id": {},
+        "plan_id": {},
+        "status": {},
+        "started_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.stripe.subscriptions"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_stripe_subscriptions.sql"
+    },
+    "model.ecommerce.stg_stripe_invoices": {
+      "unique_id": "model.ecommerce.stg_stripe_invoices",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_stripe_invoices",
+      "alias": "stg_stripe_invoices",
+      "description": "Staged Stripe invoices",
+      "columns": {
+        "invoice_id": {},
+        "customer_id": {},
+        "total_cents": {},
+        "status": {},
+        "due_date": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.stripe.invoices"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_stripe_invoices.sql"
+    },
+    "model.ecommerce.stg_shopify_orders": {
+      "unique_id": "model.ecommerce.stg_shopify_orders",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_shopify_orders",
+      "alias": "stg_shopify_orders",
+      "description": "Staged Shopify orders",
+      "columns": {
+        "order_id": {},
+        "customer_id": {},
+        "total_price": {},
+        "currency": {},
+        "status": {},
+        "created_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.shopify.orders"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_shopify_orders.sql"
+    },
+    "model.ecommerce.stg_shopify_order_items": {
+      "unique_id": "model.ecommerce.stg_shopify_order_items",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_shopify_order_items",
+      "alias": "stg_shopify_order_items",
+      "description": "Staged Shopify order line items",
+      "columns": {
+        "order_item_id": {},
+        "order_id": {},
+        "product_id": {},
+        "quantity": {},
+        "price": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.shopify.order_items"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_shopify_order_items.sql"
+    },
+    "model.ecommerce.stg_shopify_products": {
+      "unique_id": "model.ecommerce.stg_shopify_products",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_shopify_products",
+      "alias": "stg_shopify_products",
+      "description": "Staged Shopify products",
+      "columns": {
+        "product_id": {},
+        "title": {},
+        "vendor": {},
+        "product_type": {},
+        "created_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.shopify.products"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_shopify_products.sql"
+    },
+    "model.ecommerce.stg_shopify_customers": {
+      "unique_id": "model.ecommerce.stg_shopify_customers",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_shopify_customers",
+      "alias": "stg_shopify_customers",
+      "description": "Staged Shopify customers",
+      "columns": {
+        "shopify_customer_id": {},
+        "email": {},
+        "first_name": {},
+        "last_name": {},
+        "created_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.shopify.customers"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_shopify_customers.sql"
+    },
+    "model.ecommerce.stg_shopify_inventory": {
+      "unique_id": "model.ecommerce.stg_shopify_inventory",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_shopify_inventory",
+      "alias": "stg_shopify_inventory",
+      "description": "Staged Shopify inventory levels",
+      "columns": {
+        "inventory_id": {},
+        "product_id": {},
+        "location_id": {},
+        "available": {},
+        "updated_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.shopify.inventory"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_shopify_inventory.sql"
+    },
+    "model.ecommerce.stg_segment_identifies": {
+      "unique_id": "model.ecommerce.stg_segment_identifies",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_segment_identifies",
+      "alias": "stg_segment_identifies",
+      "description": "Staged Segment identify events",
+      "columns": {
+        "identify_id": {},
+        "user_id": {},
+        "anonymous_id": {},
+        "traits": {},
+        "timestamp": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.segment.identifies"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_segment_identifies.sql"
+    },
+    "model.ecommerce.stg_segment_tracks": {
+      "unique_id": "model.ecommerce.stg_segment_tracks",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_segment_tracks",
+      "alias": "stg_segment_tracks",
+      "description": "Staged Segment track events",
+      "columns": {
+        "track_id": {},
+        "user_id": {},
+        "event": {},
+        "properties": {},
+        "timestamp": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.segment.tracks"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_segment_tracks.sql"
+    },
+    "model.ecommerce.stg_segment_pages": {
+      "unique_id": "model.ecommerce.stg_segment_pages",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_segment_pages",
+      "alias": "stg_segment_pages",
+      "description": "Staged Segment page views",
+      "columns": {
+        "page_id": {},
+        "user_id": {},
+        "url": {},
+        "title": {},
+        "timestamp": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.segment.pages"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_segment_pages.sql"
+    },
+    "model.ecommerce.stg_zendesk_tickets": {
+      "unique_id": "model.ecommerce.stg_zendesk_tickets",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_zendesk_tickets",
+      "alias": "stg_zendesk_tickets",
+      "description": "Staged Zendesk tickets",
+      "columns": {
+        "ticket_id": {},
+        "requester_id": {},
+        "assignee_id": {},
+        "subject": {},
+        "status": {},
+        "created_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.zendesk.tickets"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_zendesk_tickets.sql"
+    },
+    "model.ecommerce.stg_zendesk_users": {
+      "unique_id": "model.ecommerce.stg_zendesk_users",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_zendesk_users",
+      "alias": "stg_zendesk_users",
+      "description": "Staged Zendesk users",
+      "columns": {
+        "zendesk_user_id": {},
+        "email": {},
+        "name": {},
+        "role": {},
+        "created_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.zendesk.users"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_zendesk_users.sql"
+    },
+    "model.ecommerce.stg_zendesk_satisfaction": {
+      "unique_id": "model.ecommerce.stg_zendesk_satisfaction",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_zendesk_satisfaction",
+      "alias": "stg_zendesk_satisfaction",
+      "description": "Staged Zendesk satisfaction ratings",
+      "columns": {
+        "rating_id": {},
+        "ticket_id": {},
+        "score": {},
+        "comment": {},
+        "created_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.zendesk.satisfaction_ratings"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_zendesk_satisfaction.sql"
+    },
+    "model.ecommerce.stg_salesforce_accounts": {
+      "unique_id": "model.ecommerce.stg_salesforce_accounts",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_salesforce_accounts",
+      "alias": "stg_salesforce_accounts",
+      "description": "Staged Salesforce accounts",
+      "columns": {
+        "account_id": {},
+        "name": {},
+        "industry": {},
+        "annual_revenue": {},
+        "created_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.salesforce.accounts"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_salesforce_accounts.sql"
+    },
+    "model.ecommerce.stg_salesforce_contacts": {
+      "unique_id": "model.ecommerce.stg_salesforce_contacts",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_salesforce_contacts",
+      "alias": "stg_salesforce_contacts",
+      "description": "Staged Salesforce contacts",
+      "columns": {
+        "contact_id": {},
+        "account_id": {},
+        "email": {},
+        "first_name": {},
+        "last_name": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.salesforce.contacts"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_salesforce_contacts.sql"
+    },
+    "model.ecommerce.stg_salesforce_opportunities": {
+      "unique_id": "model.ecommerce.stg_salesforce_opportunities",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_salesforce_opportunities",
+      "alias": "stg_salesforce_opportunities",
+      "description": "Staged Salesforce opportunities",
+      "columns": {
+        "opportunity_id": {},
+        "account_id": {},
+        "name": {},
+        "stage": {},
+        "amount": {},
+        "close_date": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.salesforce.opportunities"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_salesforce_opportunities.sql"
+    },
+    "model.ecommerce.stg_salesforce_leads": {
+      "unique_id": "model.ecommerce.stg_salesforce_leads",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "staging",
+      "name": "stg_salesforce_leads",
+      "alias": "stg_salesforce_leads",
+      "description": "Staged Salesforce leads",
+      "columns": {
+        "lead_id": {},
+        "email": {},
+        "company": {},
+        "status": {},
+        "source": {},
+        "created_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "source.ecommerce.salesforce.leads"
+        ]
+      },
+      "tags": [
+        "staging"
+      ],
+      "config": {
+        "materialized": "view",
+        "schema": "staging"
+      },
+      "path": "models/staging/stg_salesforce_leads.sql"
+    },
+    "model.ecommerce.int_customer_identities": {
+      "unique_id": "model.ecommerce.int_customer_identities",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_customer_identities",
+      "alias": "int_customer_identities",
+      "description": "Unified customer identity across all systems",
+      "columns": {
+        "customer_id": {
+          "description": "Unified customer ID"
+        },
+        "stripe_customer_id": {},
+        "shopify_customer_id": {},
+        "zendesk_user_id": {},
+        "salesforce_contact_id": {},
+        "email": {},
+        "first_name": {},
+        "last_name": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_stripe_customers",
+          "model.ecommerce.stg_shopify_customers",
+          "model.ecommerce.stg_segment_identifies",
+          "model.ecommerce.stg_zendesk_users",
+          "model.ecommerce.stg_salesforce_contacts"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_customer_identities.sql"
+    },
+    "model.ecommerce.int_orders_enriched": {
+      "unique_id": "model.ecommerce.int_orders_enriched",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_orders_enriched",
+      "alias": "int_orders_enriched",
+      "description": "Orders enriched with customer and product data",
+      "columns": {
+        "order_id": {},
+        "customer_id": {},
+        "product_count": {},
+        "total_price": {},
+        "customer_email": {},
+        "created_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_shopify_orders",
+          "model.ecommerce.stg_shopify_order_items",
+          "model.ecommerce.stg_shopify_products",
+          "model.ecommerce.stg_shopify_customers"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_orders_enriched.sql"
+    },
+    "model.ecommerce.int_payments_with_refunds": {
+      "unique_id": "model.ecommerce.int_payments_with_refunds",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_payments_with_refunds",
+      "alias": "int_payments_with_refunds",
+      "description": "Payments with associated refund data",
+      "columns": {
+        "payment_id": {},
+        "gross_amount": {},
+        "refund_amount": {},
+        "net_amount": {},
+        "status": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_stripe_payments",
+          "model.ecommerce.stg_stripe_refunds"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_payments_with_refunds.sql"
+    },
+    "model.ecommerce.int_subscription_history": {
+      "unique_id": "model.ecommerce.int_subscription_history",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_subscription_history",
+      "alias": "int_subscription_history",
+      "description": "Subscription state changes over time",
+      "columns": {
+        "subscription_id": {},
+        "customer_id": {},
+        "plan_id": {},
+        "status": {},
+        "started_at": {},
+        "ended_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_stripe_subscriptions",
+          "model.ecommerce.stg_stripe_customers"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_subscription_history.sql"
+    },
+    "model.ecommerce.int_support_tickets_enriched": {
+      "unique_id": "model.ecommerce.int_support_tickets_enriched",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_support_tickets_enriched",
+      "alias": "int_support_tickets_enriched",
+      "description": "Support tickets with user and satisfaction data",
+      "columns": {
+        "ticket_id": {},
+        "requester_email": {},
+        "assignee_name": {},
+        "satisfaction_score": {},
+        "resolution_hours": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_zendesk_tickets",
+          "model.ecommerce.stg_zendesk_users",
+          "model.ecommerce.stg_zendesk_satisfaction"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_support_tickets_enriched.sql"
+    },
+    "model.ecommerce.int_user_events": {
+      "unique_id": "model.ecommerce.int_user_events",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_user_events",
+      "alias": "int_user_events",
+      "description": "Unified user events from Segment",
+      "columns": {
+        "event_id": {},
+        "user_id": {},
+        "event_type": {},
+        "event_name": {},
+        "properties": {},
+        "timestamp": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_segment_tracks",
+          "model.ecommerce.stg_segment_pages"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_user_events.sql"
+    },
+    "model.ecommerce.int_product_performance": {
+      "unique_id": "model.ecommerce.int_product_performance",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_product_performance",
+      "alias": "int_product_performance",
+      "description": "Product sales and inventory performance",
+      "columns": {
+        "product_id": {},
+        "title": {},
+        "units_sold": {},
+        "revenue": {},
+        "current_inventory": {},
+        "turnover_rate": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_shopify_products",
+          "model.ecommerce.stg_shopify_order_items",
+          "model.ecommerce.stg_shopify_inventory"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_product_performance.sql"
+    },
+    "model.ecommerce.int_sales_pipeline": {
+      "unique_id": "model.ecommerce.int_sales_pipeline",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_sales_pipeline",
+      "alias": "int_sales_pipeline",
+      "description": "Salesforce pipeline with account data",
+      "columns": {
+        "opportunity_id": {},
+        "account_name": {},
+        "contact_email": {},
+        "stage": {},
+        "amount": {},
+        "probability": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_salesforce_opportunities",
+          "model.ecommerce.stg_salesforce_accounts",
+          "model.ecommerce.stg_salesforce_contacts"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_sales_pipeline.sql"
+    },
+    "model.ecommerce.int_lead_attribution": {
+      "unique_id": "model.ecommerce.int_lead_attribution",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_lead_attribution",
+      "alias": "int_lead_attribution",
+      "description": "Lead source attribution",
+      "columns": {
+        "lead_id": {},
+        "email": {},
+        "first_touch_source": {},
+        "last_touch_source": {},
+        "touchpoint_count": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_salesforce_leads",
+          "model.ecommerce.stg_segment_tracks"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_lead_attribution.sql"
+    },
+    "model.ecommerce.int_invoice_payments": {
+      "unique_id": "model.ecommerce.int_invoice_payments",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_invoice_payments",
+      "alias": "int_invoice_payments",
+      "description": "Invoices matched with payments",
+      "columns": {
+        "invoice_id": {},
+        "payment_id": {},
+        "invoice_amount": {},
+        "paid_amount": {},
+        "status": {},
+        "days_to_pay": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_stripe_invoices",
+          "model.ecommerce.stg_stripe_payments"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_invoice_payments.sql"
+    },
+    "model.ecommerce.dim_customers": {
+      "unique_id": "model.ecommerce.dim_customers",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "dim_customers",
+      "alias": "dim_customers",
+      "description": "Customer dimension with all attributes",
+      "columns": {
+        "customer_key": {
+          "description": "Surrogate key"
+        },
+        "customer_id": {},
+        "email": {},
+        "full_name": {},
+        "first_order_date": {},
+        "lifetime_order_count": {},
+        "lifetime_ticket_count": {},
+        "customer_segment": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_customer_identities",
+          "model.ecommerce.int_orders_enriched",
+          "model.ecommerce.int_support_tickets_enriched"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/dim_customers.sql"
+    },
+    "model.ecommerce.dim_products": {
+      "unique_id": "model.ecommerce.dim_products",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "dim_products",
+      "alias": "dim_products",
+      "description": "Product dimension",
+      "columns": {
+        "product_key": {},
+        "product_id": {},
+        "title": {},
+        "vendor": {},
+        "product_type": {},
+        "current_price": {},
+        "is_active": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_shopify_products",
+          "model.ecommerce.int_product_performance"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/dim_products.sql"
+    },
+    "model.ecommerce.dim_dates": {
+      "unique_id": "model.ecommerce.dim_dates",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "dim_dates",
+      "alias": "dim_dates",
+      "description": "Date dimension for time-based analysis",
+      "columns": {
+        "date_key": {},
+        "date": {},
+        "day_of_week": {},
+        "month": {},
+        "quarter": {},
+        "year": {},
+        "is_weekend": {},
+        "is_holiday": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": []
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/dim_dates.sql"
+    },
+    "model.ecommerce.dim_accounts": {
+      "unique_id": "model.ecommerce.dim_accounts",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "dim_accounts",
+      "alias": "dim_accounts",
+      "description": "B2B account dimension",
+      "columns": {
+        "account_key": {},
+        "account_id": {},
+        "name": {},
+        "industry": {},
+        "annual_revenue": {},
+        "open_opportunities": {},
+        "total_pipeline_value": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_salesforce_accounts",
+          "model.ecommerce.int_sales_pipeline"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/dim_accounts.sql"
+    },
+    "model.ecommerce.fct_orders": {
+      "unique_id": "model.ecommerce.fct_orders",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_orders",
+      "alias": "fct_orders",
+      "description": "Order fact table",
+      "columns": {
+        "order_key": {},
+        "order_id": {},
+        "customer_key": {},
+        "order_date_key": {},
+        "product_count": {},
+        "gross_revenue": {},
+        "discount_amount": {},
+        "net_revenue": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_orders_enriched",
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_orders.sql"
+    },
+    "model.ecommerce.fct_order_items": {
+      "unique_id": "model.ecommerce.fct_order_items",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_order_items",
+      "alias": "fct_order_items",
+      "description": "Order line item fact table",
+      "columns": {
+        "order_item_key": {},
+        "order_key": {},
+        "product_key": {},
+        "quantity": {},
+        "unit_price": {},
+        "line_total": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_shopify_order_items",
+          "model.ecommerce.fct_orders",
+          "model.ecommerce.dim_products"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_order_items.sql"
+    },
+    "model.ecommerce.fct_payments": {
+      "unique_id": "model.ecommerce.fct_payments",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_payments",
+      "alias": "fct_payments",
+      "description": "Payment fact table",
+      "columns": {
+        "payment_key": {},
+        "payment_id": {},
+        "customer_key": {},
+        "payment_date_key": {},
+        "gross_amount": {},
+        "refund_amount": {},
+        "net_amount": {},
+        "currency": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_payments_with_refunds",
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_payments.sql"
+    },
+    "model.ecommerce.fct_subscriptions": {
+      "unique_id": "model.ecommerce.fct_subscriptions",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_subscriptions",
+      "alias": "fct_subscriptions",
+      "description": "Subscription fact table",
+      "columns": {
+        "subscription_key": {},
+        "customer_key": {},
+        "start_date_key": {},
+        "end_date_key": {},
+        "plan_id": {},
+        "mrr": {},
+        "status": {},
+        "is_churned": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_subscription_history",
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_subscriptions.sql"
+    },
+    "model.ecommerce.fct_support_tickets": {
+      "unique_id": "model.ecommerce.fct_support_tickets",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_support_tickets",
+      "alias": "fct_support_tickets",
+      "description": "Support ticket fact table",
+      "columns": {
+        "ticket_key": {},
+        "ticket_id": {},
+        "customer_key": {},
+        "created_date_key": {},
+        "resolution_hours": {},
+        "satisfaction_score": {},
+        "is_escalated": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_support_tickets_enriched",
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_support_tickets.sql"
+    },
+    "model.ecommerce.fct_page_views": {
+      "unique_id": "model.ecommerce.fct_page_views",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_page_views",
+      "alias": "fct_page_views",
+      "description": "Page view fact table",
+      "columns": {
+        "page_view_key": {},
+        "session_id": {},
+        "customer_key": {},
+        "view_date_key": {},
+        "page_url": {},
+        "page_title": {},
+        "time_on_page_seconds": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_user_events",
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_page_views.sql"
+    },
+    "model.ecommerce.fct_events": {
+      "unique_id": "model.ecommerce.fct_events",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_events",
+      "alias": "fct_events",
+      "description": "User event fact table",
+      "columns": {
+        "event_key": {},
+        "event_id": {},
+        "customer_key": {},
+        "event_date_key": {},
+        "event_type": {},
+        "event_name": {},
+        "properties": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_user_events",
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_events.sql"
+    },
+    "model.ecommerce.fct_opportunities": {
+      "unique_id": "model.ecommerce.fct_opportunities",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_opportunities",
+      "alias": "fct_opportunities",
+      "description": "Sales opportunity fact table",
+      "columns": {
+        "opportunity_key": {},
+        "opportunity_id": {},
+        "account_key": {},
+        "created_date_key": {},
+        "close_date_key": {},
+        "stage": {},
+        "amount": {},
+        "probability": {},
+        "is_won": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_sales_pipeline",
+          "model.ecommerce.dim_accounts",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_opportunities.sql"
+    },
+    "model.ecommerce.fct_leads": {
+      "unique_id": "model.ecommerce.fct_leads",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_leads",
+      "alias": "fct_leads",
+      "description": "Lead fact table",
+      "columns": {
+        "lead_key": {},
+        "lead_id": {},
+        "created_date_key": {},
+        "converted_date_key": {},
+        "source": {},
+        "status": {},
+        "is_converted": {},
+        "days_to_convert": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_lead_attribution",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_leads.sql"
+    },
+    "model.ecommerce.agg_customer_daily": {
+      "unique_id": "model.ecommerce.agg_customer_daily",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_customer_daily",
+      "alias": "agg_customer_daily",
+      "description": "Daily customer metrics",
+      "columns": {
+        "customer_key": {},
+        "date_key": {},
+        "order_count": {},
+        "revenue": {},
+        "page_views": {},
+        "events": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_orders",
+          "model.ecommerce.fct_payments",
+          "model.ecommerce.fct_page_views",
+          "model.ecommerce.dim_customers"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_customer_daily.sql"
+    },
+    "model.ecommerce.agg_customer_monthly": {
+      "unique_id": "model.ecommerce.agg_customer_monthly",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_customer_monthly",
+      "alias": "agg_customer_monthly",
+      "description": "Monthly customer metrics",
+      "columns": {
+        "customer_key": {},
+        "month_key": {},
+        "order_count": {},
+        "revenue": {},
+        "avg_order_value": {},
+        "page_views": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.agg_customer_daily"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_customer_monthly.sql"
+    },
+    "model.ecommerce.agg_product_daily": {
+      "unique_id": "model.ecommerce.agg_product_daily",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_product_daily",
+      "alias": "agg_product_daily",
+      "description": "Daily product metrics",
+      "columns": {
+        "product_key": {},
+        "date_key": {},
+        "units_sold": {},
+        "revenue": {},
+        "order_count": {},
+        "avg_quantity_per_order": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_order_items",
+          "model.ecommerce.dim_products"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_product_daily.sql"
+    },
+    "model.ecommerce.agg_product_weekly": {
+      "unique_id": "model.ecommerce.agg_product_weekly",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_product_weekly",
+      "alias": "agg_product_weekly",
+      "description": "Weekly product metrics",
+      "columns": {
+        "product_key": {},
+        "week_key": {},
+        "units_sold": {},
+        "revenue": {},
+        "week_over_week_growth": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.agg_product_daily"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_product_weekly.sql"
+    },
+    "model.ecommerce.agg_revenue_daily": {
+      "unique_id": "model.ecommerce.agg_revenue_daily",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_revenue_daily",
+      "alias": "agg_revenue_daily",
+      "description": "Daily revenue metrics",
+      "columns": {
+        "date_key": {},
+        "gross_revenue": {},
+        "refunds": {},
+        "net_revenue": {},
+        "order_count": {},
+        "new_customers": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_payments",
+          "model.ecommerce.fct_orders"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_revenue_daily.sql"
+    },
+    "model.ecommerce.agg_revenue_monthly": {
+      "unique_id": "model.ecommerce.agg_revenue_monthly",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_revenue_monthly",
+      "alias": "agg_revenue_monthly",
+      "description": "Monthly revenue metrics",
+      "columns": {
+        "month_key": {},
+        "gross_revenue": {},
+        "refunds": {},
+        "net_revenue": {},
+        "mom_growth": {},
+        "yoy_growth": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.agg_revenue_daily"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_revenue_monthly.sql"
+    },
+    "model.ecommerce.agg_support_daily": {
+      "unique_id": "model.ecommerce.agg_support_daily",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_support_daily",
+      "alias": "agg_support_daily",
+      "description": "Daily support metrics",
+      "columns": {
+        "date_key": {},
+        "ticket_count": {},
+        "avg_resolution_hours": {},
+        "avg_satisfaction": {},
+        "escalation_rate": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_support_tickets"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_support_daily.sql"
+    },
+    "model.ecommerce.agg_funnel_daily": {
+      "unique_id": "model.ecommerce.agg_funnel_daily",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_funnel_daily",
+      "alias": "agg_funnel_daily",
+      "description": "Daily conversion funnel metrics",
+      "columns": {
+        "date_key": {},
+        "visitors": {},
+        "signups": {},
+        "add_to_carts": {},
+        "checkouts": {},
+        "purchases": {},
+        "conversion_rate": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_page_views",
+          "model.ecommerce.fct_events",
+          "model.ecommerce.fct_orders"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_funnel_daily.sql"
+    },
+    "model.ecommerce.agg_subscription_monthly": {
+      "unique_id": "model.ecommerce.agg_subscription_monthly",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_subscription_monthly",
+      "alias": "agg_subscription_monthly",
+      "description": "Monthly subscription metrics",
+      "columns": {
+        "month_key": {},
+        "active_subscriptions": {},
+        "new_subscriptions": {},
+        "churned_subscriptions": {},
+        "mrr": {},
+        "churn_rate": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_subscriptions"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_subscription_monthly.sql"
+    },
+    "model.ecommerce.agg_pipeline_weekly": {
+      "unique_id": "model.ecommerce.agg_pipeline_weekly",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_pipeline_weekly",
+      "alias": "agg_pipeline_weekly",
+      "description": "Weekly sales pipeline metrics",
+      "columns": {
+        "week_key": {},
+        "new_leads": {},
+        "qualified_leads": {},
+        "new_opportunities": {},
+        "pipeline_value": {},
+        "closed_won_value": {},
+        "win_rate": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_opportunities",
+          "model.ecommerce.fct_leads"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_pipeline_weekly.sql"
+    },
+    "model.ecommerce.rpt_executive_dashboard": {
+      "unique_id": "model.ecommerce.rpt_executive_dashboard",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_executive_dashboard",
+      "alias": "rpt_executive_dashboard",
+      "description": "Executive KPI dashboard",
+      "columns": {
+        "report_date": {},
+        "mrr": {},
+        "arr": {},
+        "revenue_growth": {},
+        "churn_rate": {},
+        "nps_score": {},
+        "pipeline_coverage": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.agg_revenue_monthly",
+          "model.ecommerce.agg_subscription_monthly",
+          "model.ecommerce.agg_pipeline_weekly",
+          "model.ecommerce.agg_support_daily"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_executive_dashboard.sql"
+    },
+    "model.ecommerce.rpt_customer_health": {
+      "unique_id": "model.ecommerce.rpt_customer_health",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_customer_health",
+      "alias": "rpt_customer_health",
+      "description": "Customer health scores",
+      "columns": {
+        "customer_key": {},
+        "health_score": {},
+        "engagement_score": {},
+        "support_score": {},
+        "payment_score": {},
+        "risk_level": {},
+        "recommended_action": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.agg_customer_monthly",
+          "model.ecommerce.fct_support_tickets",
+          "model.ecommerce.fct_subscriptions"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_customer_health.sql"
+    },
+    "model.ecommerce.rpt_product_performance": {
+      "unique_id": "model.ecommerce.rpt_product_performance",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_product_performance",
+      "alias": "rpt_product_performance",
+      "description": "Product performance report",
+      "columns": {
+        "product_key": {},
+        "title": {},
+        "revenue_l30d": {},
+        "units_sold_l30d": {},
+        "growth_rate": {},
+        "inventory_days": {},
+        "margin": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_products",
+          "model.ecommerce.agg_product_weekly",
+          "model.ecommerce.int_product_performance"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_product_performance.sql"
+    },
+    "model.ecommerce.rpt_cohort_retention": {
+      "unique_id": "model.ecommerce.rpt_cohort_retention",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_cohort_retention",
+      "alias": "rpt_cohort_retention",
+      "description": "Customer cohort retention analysis",
+      "columns": {
+        "cohort_month": {},
+        "cohort_size": {},
+        "month_number": {},
+        "retained_customers": {},
+        "retention_rate": {},
+        "revenue": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.fct_orders",
+          "model.ecommerce.agg_customer_monthly"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_cohort_retention.sql"
+    },
+    "model.ecommerce.rpt_sales_leaderboard": {
+      "unique_id": "model.ecommerce.rpt_sales_leaderboard",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_sales_leaderboard",
+      "alias": "rpt_sales_leaderboard",
+      "description": "Sales team leaderboard",
+      "columns": {
+        "sales_rep": {},
+        "opportunities_created": {},
+        "opportunities_won": {},
+        "revenue_closed": {},
+        "avg_deal_size": {},
+        "win_rate": {},
+        "rank": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_opportunities",
+          "model.ecommerce.agg_pipeline_weekly"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_sales_leaderboard.sql"
+    },
+    "model.ecommerce.rpt_channel_attribution": {
+      "unique_id": "model.ecommerce.rpt_channel_attribution",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_channel_attribution",
+      "alias": "rpt_channel_attribution",
+      "description": "Marketing channel attribution report",
+      "columns": {
+        "channel": {},
+        "visitors": {},
+        "leads": {},
+        "customers": {},
+        "revenue": {},
+        "cac": {},
+        "roas": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_leads",
+          "model.ecommerce.fct_orders",
+          "model.ecommerce.agg_funnel_daily"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_channel_attribution.sql"
+    },
+    "model.ecommerce.rpt_support_sla": {
+      "unique_id": "model.ecommerce.rpt_support_sla",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_support_sla",
+      "alias": "rpt_support_sla",
+      "description": "Support SLA compliance report",
+      "columns": {
+        "date_key": {},
+        "total_tickets": {},
+        "sla_met": {},
+        "sla_breached": {},
+        "sla_compliance_rate": {},
+        "avg_first_response_time": {},
+        "avg_resolution_time": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_support_tickets",
+          "model.ecommerce.agg_support_daily"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_support_sla.sql"
+    },
+    "model.ecommerce.rpt_churn_analysis": {
+      "unique_id": "model.ecommerce.rpt_churn_analysis",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_churn_analysis",
+      "alias": "rpt_churn_analysis",
+      "description": "Churn analysis and prediction",
+      "columns": {
+        "customer_key": {},
+        "churn_probability": {},
+        "risk_factors": {},
+        "last_activity_date": {},
+        "subscription_age_days": {},
+        "recommended_intervention": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_subscriptions",
+          "model.ecommerce.rpt_customer_health",
+          "model.ecommerce.dim_customers"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_churn_analysis.sql"
+    },
+    "model.ecommerce.rpt_inventory_forecast": {
+      "unique_id": "model.ecommerce.rpt_inventory_forecast",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_inventory_forecast",
+      "alias": "rpt_inventory_forecast",
+      "description": "Inventory demand forecasting",
+      "columns": {
+        "product_key": {},
+        "current_stock": {},
+        "avg_daily_sales": {},
+        "days_of_stock": {},
+        "reorder_point": {},
+        "forecasted_demand_30d": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_products",
+          "model.ecommerce.agg_product_weekly",
+          "model.ecommerce.int_product_performance"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_inventory_forecast.sql"
+    },
+    "model.ecommerce.rpt_revenue_forecast": {
+      "unique_id": "model.ecommerce.rpt_revenue_forecast",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_revenue_forecast",
+      "alias": "rpt_revenue_forecast",
+      "description": "Revenue forecasting",
+      "columns": {
+        "forecast_date": {},
+        "mrr_forecast": {},
+        "expansion_forecast": {},
+        "churn_forecast": {},
+        "pipeline_forecast": {},
+        "total_forecast": {},
+        "confidence_interval_low": {},
+        "confidence_interval_high": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.agg_revenue_monthly",
+          "model.ecommerce.agg_subscription_monthly",
+          "model.ecommerce.agg_pipeline_weekly"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_revenue_forecast.sql"
+    },
+    "model.ecommerce.exp_salesforce_contacts": {
+      "unique_id": "model.ecommerce.exp_salesforce_contacts",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_salesforce_contacts",
+      "alias": "exp_salesforce_contacts",
+      "description": "Customer data export for Salesforce sync",
+      "columns": {
+        "salesforce_contact_id": {},
+        "email": {},
+        "health_score": {},
+        "lifetime_value": {},
+        "last_order_date": {},
+        "sync_status": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.rpt_customer_health"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_salesforce_contacts.sql"
+    },
+    "model.ecommerce.exp_hubspot_companies": {
+      "unique_id": "model.ecommerce.exp_hubspot_companies",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_hubspot_companies",
+      "alias": "exp_hubspot_companies",
+      "description": "Account data export for HubSpot",
+      "columns": {
+        "hubspot_company_id": {},
+        "company_name": {},
+        "industry": {},
+        "total_revenue": {},
+        "open_deals": {},
+        "last_activity": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_accounts",
+          "model.ecommerce.fct_opportunities"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_hubspot_companies.sql"
+    },
+    "model.ecommerce.exp_intercom_users": {
+      "unique_id": "model.ecommerce.exp_intercom_users",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_intercom_users",
+      "alias": "exp_intercom_users",
+      "description": "User data export for Intercom",
+      "columns": {
+        "intercom_user_id": {},
+        "email": {},
+        "name": {},
+        "plan": {},
+        "health_score": {},
+        "last_seen_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.rpt_customer_health",
+          "model.ecommerce.fct_page_views"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_intercom_users.sql"
+    },
+    "model.ecommerce.exp_amplitude_events": {
+      "unique_id": "model.ecommerce.exp_amplitude_events",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_amplitude_events",
+      "alias": "exp_amplitude_events",
+      "description": "Event data export for Amplitude",
+      "columns": {
+        "amplitude_event_id": {},
+        "user_id": {},
+        "event_type": {},
+        "event_properties": {},
+        "user_properties": {},
+        "timestamp": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_events",
+          "model.ecommerce.dim_customers"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_amplitude_events.sql"
+    },
+    "model.ecommerce.exp_looker_semantic": {
+      "unique_id": "model.ecommerce.exp_looker_semantic",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_looker_semantic",
+      "alias": "exp_looker_semantic",
+      "description": "Semantic layer export for Looker",
+      "columns": {
+        "dimension_type": {},
+        "dimension_name": {},
+        "measure_name": {},
+        "value": {},
+        "period": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.rpt_executive_dashboard",
+          "model.ecommerce.rpt_customer_health",
+          "model.ecommerce.rpt_product_performance"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_looker_semantic.sql"
+    },
+    "model.ecommerce.exp_bi_cube": {
+      "unique_id": "model.ecommerce.exp_bi_cube",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_bi_cube",
+      "alias": "exp_bi_cube",
+      "description": "Pre-aggregated cube for BI tools",
+      "columns": {
+        "date_key": {},
+        "customer_segment": {},
+        "product_category": {},
+        "channel": {},
+        "revenue": {},
+        "orders": {},
+        "customers": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.agg_revenue_monthly",
+          "model.ecommerce.agg_customer_monthly",
+          "model.ecommerce.agg_product_weekly",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_bi_cube.sql"
+    },
+    "model.ecommerce.exp_ml_features": {
+      "unique_id": "model.ecommerce.exp_ml_features",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_ml_features",
+      "alias": "exp_ml_features",
+      "description": "Feature store export for ML models",
+      "columns": {
+        "customer_id": {},
+        "features": {},
+        "feature_timestamp": {},
+        "label": {},
+        "model_version": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.agg_customer_monthly",
+          "model.ecommerce.rpt_customer_health",
+          "model.ecommerce.rpt_churn_analysis"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_ml_features.sql"
+    },
+    "model.ecommerce.exp_data_catalog": {
+      "unique_id": "model.ecommerce.exp_data_catalog",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_data_catalog",
+      "alias": "exp_data_catalog",
+      "description": "Metadata export for data catalog",
+      "columns": {
+        "table_name": {},
+        "column_name": {},
+        "data_type": {},
+        "description": {},
+        "pii_flag": {},
+        "last_updated": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.dim_products",
+          "model.ecommerce.dim_accounts",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_data_catalog.sql"
+    },
+    "model.ecommerce.snap_customer_state": {
+      "unique_id": "model.ecommerce.snap_customer_state",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "snapshots",
+      "name": "snap_customer_state",
+      "alias": "snap_customer_state",
+      "description": "Customer state snapshot for SCD Type 2",
+      "columns": {
+        "customer_key": {},
+        "valid_from": {},
+        "valid_to": {},
+        "is_current": {},
+        "customer_segment": {},
+        "health_score": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers"
+        ]
+      },
+      "tags": [
+        "snapshots"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "snapshots"
+      },
+      "path": "models/snapshots/snap_customer_state.sql"
+    },
+    "model.ecommerce.snap_subscription_state": {
+      "unique_id": "model.ecommerce.snap_subscription_state",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "snapshots",
+      "name": "snap_subscription_state",
+      "alias": "snap_subscription_state",
+      "description": "Subscription state snapshot",
+      "columns": {
+        "subscription_key": {},
+        "valid_from": {},
+        "valid_to": {},
+        "is_current": {},
+        "plan_id": {},
+        "mrr": {},
+        "status": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_subscriptions"
+        ]
+      },
+      "tags": [
+        "snapshots"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "snapshots"
+      },
+      "path": "models/snapshots/snap_subscription_state.sql"
+    },
+    "model.ecommerce.audit_data_quality": {
+      "unique_id": "model.ecommerce.audit_data_quality",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "audit",
+      "name": "audit_data_quality",
+      "alias": "audit_data_quality",
+      "description": "Data quality audit results",
+      "columns": {
+        "audit_date": {},
+        "table_name": {},
+        "check_name": {},
+        "check_result": {},
+        "rows_failed": {},
+        "severity": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.dim_products",
+          "model.ecommerce.fct_orders"
+        ]
+      },
+      "tags": [
+        "audit"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "audit"
+      },
+      "path": "models/audit/audit_data_quality.sql"
+    },
+    "model.ecommerce.audit_pipeline_runs": {
+      "unique_id": "model.ecommerce.audit_pipeline_runs",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "audit",
+      "name": "audit_pipeline_runs",
+      "alias": "audit_pipeline_runs",
+      "description": "Pipeline execution audit trail",
+      "columns": {
+        "run_id": {},
+        "started_at": {},
+        "completed_at": {},
+        "status": {},
+        "rows_processed": {},
+        "error_message": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": []
+      },
+      "tags": [
+        "audit"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "audit"
+      },
+      "path": "models/audit/audit_pipeline_runs.sql"
+    },
+    "model.ecommerce.audit_schema_changes": {
+      "unique_id": "model.ecommerce.audit_schema_changes",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "audit",
+      "name": "audit_schema_changes",
+      "alias": "audit_schema_changes",
+      "description": "Schema change audit log",
+      "columns": {
+        "change_id": {},
+        "table_name": {},
+        "change_type": {},
+        "old_schema": {},
+        "new_schema": {},
+        "detected_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.exp_data_catalog"
+        ]
+      },
+      "tags": [
+        "audit"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "audit"
+      },
+      "path": "models/audit/audit_schema_changes.sql"
+    },
+    "model.ecommerce.int_customer_sessions": {
+      "unique_id": "model.ecommerce.int_customer_sessions",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_customer_sessions",
+      "alias": "int_customer_sessions",
+      "description": "Customer web sessions with attribution",
+      "columns": {
+        "session_id": {},
+        "customer_id": {},
+        "started_at": {},
+        "ended_at": {},
+        "page_count": {},
+        "event_count": {},
+        "utm_source": {},
+        "utm_medium": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_segment_pages",
+          "model.ecommerce.stg_segment_tracks",
+          "model.ecommerce.int_customer_identities"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_customer_sessions.sql"
+    },
+    "model.ecommerce.int_order_refunds": {
+      "unique_id": "model.ecommerce.int_order_refunds",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_order_refunds",
+      "alias": "int_order_refunds",
+      "description": "Orders with refund details",
+      "columns": {
+        "order_id": {},
+        "gross_amount": {},
+        "refund_amount": {},
+        "net_amount": {},
+        "is_fully_refunded": {},
+        "refund_reason": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_shopify_orders",
+          "model.ecommerce.int_payments_with_refunds"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_order_refunds.sql"
+    },
+    "model.ecommerce.int_customer_ltv": {
+      "unique_id": "model.ecommerce.int_customer_ltv",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_customer_ltv",
+      "alias": "int_customer_ltv",
+      "description": "Customer lifetime value calculation",
+      "columns": {
+        "customer_id": {},
+        "first_order_date": {},
+        "last_order_date": {},
+        "total_orders": {},
+        "total_revenue": {},
+        "predicted_ltv": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_customer_identities",
+          "model.ecommerce.int_orders_enriched",
+          "model.ecommerce.int_subscription_history"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_customer_ltv.sql"
+    },
+    "model.ecommerce.int_product_categories": {
+      "unique_id": "model.ecommerce.int_product_categories",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_product_categories",
+      "alias": "int_product_categories",
+      "description": "Product categorization hierarchy",
+      "columns": {
+        "product_id": {},
+        "category_l1": {},
+        "category_l2": {},
+        "category_l3": {},
+        "is_featured": {},
+        "margin_tier": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_shopify_products"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_product_categories.sql"
+    },
+    "model.ecommerce.int_email_engagement": {
+      "unique_id": "model.ecommerce.int_email_engagement",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "intermediate",
+      "name": "int_email_engagement",
+      "alias": "int_email_engagement",
+      "description": "Email engagement metrics",
+      "columns": {
+        "customer_id": {},
+        "emails_sent": {},
+        "emails_opened": {},
+        "emails_clicked": {},
+        "open_rate": {},
+        "click_rate": {},
+        "last_engaged_at": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.stg_segment_tracks",
+          "model.ecommerce.int_customer_identities"
+        ]
+      },
+      "tags": [
+        "intermediate"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "intermediate"
+      },
+      "path": "models/intermediate/int_email_engagement.sql"
+    },
+    "model.ecommerce.fct_sessions": {
+      "unique_id": "model.ecommerce.fct_sessions",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_sessions",
+      "alias": "fct_sessions",
+      "description": "Web session fact table",
+      "columns": {
+        "session_key": {},
+        "session_id": {},
+        "customer_key": {},
+        "session_date_key": {},
+        "duration_seconds": {},
+        "page_count": {},
+        "is_converted": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_customer_sessions",
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_sessions.sql"
+    },
+    "model.ecommerce.fct_refunds": {
+      "unique_id": "model.ecommerce.fct_refunds",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_refunds",
+      "alias": "fct_refunds",
+      "description": "Refund fact table",
+      "columns": {
+        "refund_key": {},
+        "order_key": {},
+        "customer_key": {},
+        "refund_date_key": {},
+        "refund_amount": {},
+        "refund_reason": {},
+        "processing_days": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_order_refunds",
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_refunds.sql"
+    },
+    "model.ecommerce.fct_email_sends": {
+      "unique_id": "model.ecommerce.fct_email_sends",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "core",
+      "name": "fct_email_sends",
+      "alias": "fct_email_sends",
+      "description": "Email send fact table",
+      "columns": {
+        "email_key": {},
+        "customer_key": {},
+        "send_date_key": {},
+        "campaign_id": {},
+        "is_opened": {},
+        "is_clicked": {},
+        "is_bounced": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.int_email_engagement",
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.dim_dates"
+        ]
+      },
+      "tags": [
+        "marts"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "core"
+      },
+      "path": "models/marts/fct_email_sends.sql"
+    },
+    "model.ecommerce.agg_session_daily": {
+      "unique_id": "model.ecommerce.agg_session_daily",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_session_daily",
+      "alias": "agg_session_daily",
+      "description": "Daily session metrics",
+      "columns": {
+        "date_key": {},
+        "total_sessions": {},
+        "unique_visitors": {},
+        "avg_session_duration": {},
+        "bounce_rate": {},
+        "conversion_rate": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_sessions"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_session_daily.sql"
+    },
+    "model.ecommerce.agg_refund_monthly": {
+      "unique_id": "model.ecommerce.agg_refund_monthly",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_refund_monthly",
+      "alias": "agg_refund_monthly",
+      "description": "Monthly refund metrics",
+      "columns": {
+        "month_key": {},
+        "refund_count": {},
+        "refund_amount": {},
+        "refund_rate": {},
+        "avg_processing_days": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_refunds"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_refund_monthly.sql"
+    },
+    "model.ecommerce.agg_email_campaign": {
+      "unique_id": "model.ecommerce.agg_email_campaign",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_email_campaign",
+      "alias": "agg_email_campaign",
+      "description": "Email campaign performance",
+      "columns": {
+        "campaign_id": {},
+        "sends": {},
+        "opens": {},
+        "clicks": {},
+        "open_rate": {},
+        "click_rate": {},
+        "revenue_attributed": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_email_sends"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_email_campaign.sql"
+    },
+    "model.ecommerce.agg_category_weekly": {
+      "unique_id": "model.ecommerce.agg_category_weekly",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_category_weekly",
+      "alias": "agg_category_weekly",
+      "description": "Weekly category performance",
+      "columns": {
+        "category_l1": {},
+        "week_key": {},
+        "units_sold": {},
+        "revenue": {},
+        "unique_products": {},
+        "unique_customers": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_order_items",
+          "model.ecommerce.int_product_categories"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_category_weekly.sql"
+    },
+    "model.ecommerce.agg_cohort_weekly": {
+      "unique_id": "model.ecommerce.agg_cohort_weekly",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_cohort_weekly",
+      "alias": "agg_cohort_weekly",
+      "description": "Weekly cohort metrics",
+      "columns": {
+        "cohort_week": {},
+        "week_number": {},
+        "customers": {},
+        "orders": {},
+        "revenue": {},
+        "retention_rate": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.fct_orders"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_cohort_weekly.sql"
+    },
+    "model.ecommerce.agg_geo_daily": {
+      "unique_id": "model.ecommerce.agg_geo_daily",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "aggregations",
+      "name": "agg_geo_daily",
+      "alias": "agg_geo_daily",
+      "description": "Daily geographic metrics",
+      "columns": {
+        "date_key": {},
+        "country": {},
+        "region": {},
+        "sessions": {},
+        "orders": {},
+        "revenue": {},
+        "conversion_rate": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_orders",
+          "model.ecommerce.fct_sessions"
+        ]
+      },
+      "tags": [
+        "aggregations"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "aggregations"
+      },
+      "path": "models/aggregations/agg_geo_daily.sql"
+    },
+    "model.ecommerce.rpt_weekly_metrics": {
+      "unique_id": "model.ecommerce.rpt_weekly_metrics",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_weekly_metrics",
+      "alias": "rpt_weekly_metrics",
+      "description": "Weekly business metrics summary",
+      "columns": {
+        "week_start": {},
+        "revenue": {},
+        "orders": {},
+        "sessions": {},
+        "conversion_rate": {},
+        "aov": {},
+        "wow_growth": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.agg_revenue_monthly",
+          "model.ecommerce.agg_session_daily",
+          "model.ecommerce.agg_funnel_daily"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_weekly_metrics.sql"
+    },
+    "model.ecommerce.rpt_marketing_roi": {
+      "unique_id": "model.ecommerce.rpt_marketing_roi",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_marketing_roi",
+      "alias": "rpt_marketing_roi",
+      "description": "Marketing ROI by channel",
+      "columns": {
+        "channel": {},
+        "spend": {},
+        "revenue": {},
+        "roi": {},
+        "cac": {},
+        "ltv_to_cac": {},
+        "payback_months": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.rpt_channel_attribution",
+          "model.ecommerce.agg_email_campaign",
+          "model.ecommerce.agg_session_daily"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_marketing_roi.sql"
+    },
+    "model.ecommerce.rpt_category_trends": {
+      "unique_id": "model.ecommerce.rpt_category_trends",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_category_trends",
+      "alias": "rpt_category_trends",
+      "description": "Product category trends",
+      "columns": {
+        "category_l1": {},
+        "category_l2": {},
+        "revenue_l4w": {},
+        "growth_rate": {},
+        "market_share": {},
+        "trend_direction": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.agg_category_weekly",
+          "model.ecommerce.int_product_categories"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_category_trends.sql"
+    },
+    "model.ecommerce.rpt_customer_segments": {
+      "unique_id": "model.ecommerce.rpt_customer_segments",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_customer_segments",
+      "alias": "rpt_customer_segments",
+      "description": "Customer segmentation analysis",
+      "columns": {
+        "segment_name": {},
+        "customer_count": {},
+        "avg_ltv": {},
+        "avg_orders": {},
+        "churn_rate": {},
+        "growth_rate": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.rpt_customer_health",
+          "model.ecommerce.int_customer_ltv"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_customer_segments.sql"
+    },
+    "model.ecommerce.rpt_ab_test_results": {
+      "unique_id": "model.ecommerce.rpt_ab_test_results",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_ab_test_results",
+      "alias": "rpt_ab_test_results",
+      "description": "A/B test results summary",
+      "columns": {
+        "test_id": {},
+        "variant": {},
+        "sample_size": {},
+        "conversion_rate": {},
+        "revenue_per_visitor": {},
+        "statistical_significance": {},
+        "winner": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_sessions",
+          "model.ecommerce.fct_orders",
+          "model.ecommerce.agg_funnel_daily"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_ab_test_results.sql"
+    },
+    "model.ecommerce.rpt_geo_performance": {
+      "unique_id": "model.ecommerce.rpt_geo_performance",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "reports",
+      "name": "rpt_geo_performance",
+      "alias": "rpt_geo_performance",
+      "description": "Geographic performance report",
+      "columns": {
+        "country": {},
+        "region": {},
+        "revenue_l30d": {},
+        "orders_l30d": {},
+        "aov": {},
+        "conversion_rate": {},
+        "growth_rate": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.agg_geo_daily"
+        ]
+      },
+      "tags": [
+        "reports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "reports"
+      },
+      "path": "models/reports/rpt_geo_performance.sql"
+    },
+    "model.ecommerce.exp_facebook_audiences": {
+      "unique_id": "model.ecommerce.exp_facebook_audiences",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_facebook_audiences",
+      "alias": "exp_facebook_audiences",
+      "description": "Customer audiences for Facebook Ads",
+      "columns": {
+        "email_hash": {},
+        "phone_hash": {},
+        "segment": {},
+        "ltv_tier": {},
+        "last_purchase_days": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.rpt_customer_segments",
+          "model.ecommerce.int_customer_ltv"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_facebook_audiences.sql"
+    },
+    "model.ecommerce.exp_google_analytics": {
+      "unique_id": "model.ecommerce.exp_google_analytics",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_google_analytics",
+      "alias": "exp_google_analytics",
+      "description": "Data export for Google Analytics",
+      "columns": {
+        "client_id": {},
+        "session_id": {},
+        "transaction_id": {},
+        "revenue": {},
+        "items": {},
+        "timestamp": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.fct_sessions",
+          "model.ecommerce.fct_orders"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_google_analytics.sql"
+    },
+    "model.ecommerce.exp_mixpanel_profiles": {
+      "unique_id": "model.ecommerce.exp_mixpanel_profiles",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_mixpanel_profiles",
+      "alias": "exp_mixpanel_profiles",
+      "description": "User profiles for Mixpanel",
+      "columns": {
+        "mixpanel_id": {},
+        "email": {},
+        "plan": {},
+        "signup_date": {},
+        "total_orders": {},
+        "health_score": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.rpt_customer_health"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_mixpanel_profiles.sql"
+    },
+    "model.ecommerce.exp_zendesk_context": {
+      "unique_id": "model.ecommerce.exp_zendesk_context",
+      "resource_type": "model",
+      "database": "ANALYTICS",
+      "schema": "exports",
+      "name": "exp_zendesk_context",
+      "alias": "exp_zendesk_context",
+      "description": "Customer context for Zendesk",
+      "columns": {
+        "zendesk_user_id": {},
+        "customer_tier": {},
+        "lifetime_value": {},
+        "open_tickets": {},
+        "satisfaction_history": {}
+      },
+      "depends_on": {
+        "macros": [],
+        "nodes": [
+          "model.ecommerce.dim_customers",
+          "model.ecommerce.rpt_customer_health",
+          "model.ecommerce.fct_support_tickets"
+        ]
+      },
+      "tags": [
+        "exports"
+      ],
+      "config": {
+        "materialized": "table",
+        "schema": "exports"
+      },
+      "path": "models/exports/exp_zendesk_context.sql"
+    }
+  },
+  "sources": {
+    "source.ecommerce.stripe.payments": {
+      "unique_id": "source.ecommerce.stripe.payments",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "STRIPE",
+      "name": "payments",
+      "source_name": "stripe",
+      "description": "Raw payments data from stripe",
+      "columns": {},
+      "loader": "stripe",
+      "identifier": "payments",
+      "tags": [
+        "raw",
+        "stripe"
+      ]
+    },
+    "source.ecommerce.stripe.refunds": {
+      "unique_id": "source.ecommerce.stripe.refunds",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "STRIPE",
+      "name": "refunds",
+      "source_name": "stripe",
+      "description": "Raw refunds data from stripe",
+      "columns": {},
+      "loader": "stripe",
+      "identifier": "refunds",
+      "tags": [
+        "raw",
+        "stripe"
+      ]
+    },
+    "source.ecommerce.stripe.customers": {
+      "unique_id": "source.ecommerce.stripe.customers",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "STRIPE",
+      "name": "customers",
+      "source_name": "stripe",
+      "description": "Raw customers data from stripe",
+      "columns": {},
+      "loader": "stripe",
+      "identifier": "customers",
+      "tags": [
+        "raw",
+        "stripe"
+      ]
+    },
+    "source.ecommerce.stripe.subscriptions": {
+      "unique_id": "source.ecommerce.stripe.subscriptions",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "STRIPE",
+      "name": "subscriptions",
+      "source_name": "stripe",
+      "description": "Raw subscriptions data from stripe",
+      "columns": {},
+      "loader": "stripe",
+      "identifier": "subscriptions",
+      "tags": [
+        "raw",
+        "stripe"
+      ]
+    },
+    "source.ecommerce.stripe.invoices": {
+      "unique_id": "source.ecommerce.stripe.invoices",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "STRIPE",
+      "name": "invoices",
+      "source_name": "stripe",
+      "description": "Raw invoices data from stripe",
+      "columns": {},
+      "loader": "stripe",
+      "identifier": "invoices",
+      "tags": [
+        "raw",
+        "stripe"
+      ]
+    },
+    "source.ecommerce.shopify.orders": {
+      "unique_id": "source.ecommerce.shopify.orders",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SHOPIFY",
+      "name": "orders",
+      "source_name": "shopify",
+      "description": "Raw orders data from shopify",
+      "columns": {},
+      "loader": "shopify",
+      "identifier": "orders",
+      "tags": [
+        "raw",
+        "shopify"
+      ]
+    },
+    "source.ecommerce.shopify.order_items": {
+      "unique_id": "source.ecommerce.shopify.order_items",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SHOPIFY",
+      "name": "order_items",
+      "source_name": "shopify",
+      "description": "Raw order_items data from shopify",
+      "columns": {},
+      "loader": "shopify",
+      "identifier": "order_items",
+      "tags": [
+        "raw",
+        "shopify"
+      ]
+    },
+    "source.ecommerce.shopify.products": {
+      "unique_id": "source.ecommerce.shopify.products",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SHOPIFY",
+      "name": "products",
+      "source_name": "shopify",
+      "description": "Raw products data from shopify",
+      "columns": {},
+      "loader": "shopify",
+      "identifier": "products",
+      "tags": [
+        "raw",
+        "shopify"
+      ]
+    },
+    "source.ecommerce.shopify.customers": {
+      "unique_id": "source.ecommerce.shopify.customers",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SHOPIFY",
+      "name": "customers",
+      "source_name": "shopify",
+      "description": "Raw customers data from shopify",
+      "columns": {},
+      "loader": "shopify",
+      "identifier": "customers",
+      "tags": [
+        "raw",
+        "shopify"
+      ]
+    },
+    "source.ecommerce.shopify.inventory": {
+      "unique_id": "source.ecommerce.shopify.inventory",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SHOPIFY",
+      "name": "inventory",
+      "source_name": "shopify",
+      "description": "Raw inventory data from shopify",
+      "columns": {},
+      "loader": "shopify",
+      "identifier": "inventory",
+      "tags": [
+        "raw",
+        "shopify"
+      ]
+    },
+    "source.ecommerce.segment.identifies": {
+      "unique_id": "source.ecommerce.segment.identifies",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SEGMENT",
+      "name": "identifies",
+      "source_name": "segment",
+      "description": "Raw identifies data from segment",
+      "columns": {},
+      "loader": "segment",
+      "identifier": "identifies",
+      "tags": [
+        "raw",
+        "segment"
+      ]
+    },
+    "source.ecommerce.segment.tracks": {
+      "unique_id": "source.ecommerce.segment.tracks",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SEGMENT",
+      "name": "tracks",
+      "source_name": "segment",
+      "description": "Raw tracks data from segment",
+      "columns": {},
+      "loader": "segment",
+      "identifier": "tracks",
+      "tags": [
+        "raw",
+        "segment"
+      ]
+    },
+    "source.ecommerce.segment.pages": {
+      "unique_id": "source.ecommerce.segment.pages",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SEGMENT",
+      "name": "pages",
+      "source_name": "segment",
+      "description": "Raw pages data from segment",
+      "columns": {},
+      "loader": "segment",
+      "identifier": "pages",
+      "tags": [
+        "raw",
+        "segment"
+      ]
+    },
+    "source.ecommerce.segment.screens": {
+      "unique_id": "source.ecommerce.segment.screens",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SEGMENT",
+      "name": "screens",
+      "source_name": "segment",
+      "description": "Raw screens data from segment",
+      "columns": {},
+      "loader": "segment",
+      "identifier": "screens",
+      "tags": [
+        "raw",
+        "segment"
+      ]
+    },
+    "source.ecommerce.zendesk.tickets": {
+      "unique_id": "source.ecommerce.zendesk.tickets",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "ZENDESK",
+      "name": "tickets",
+      "source_name": "zendesk",
+      "description": "Raw tickets data from zendesk",
+      "columns": {},
+      "loader": "zendesk",
+      "identifier": "tickets",
+      "tags": [
+        "raw",
+        "zendesk"
+      ]
+    },
+    "source.ecommerce.zendesk.users": {
+      "unique_id": "source.ecommerce.zendesk.users",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "ZENDESK",
+      "name": "users",
+      "source_name": "zendesk",
+      "description": "Raw users data from zendesk",
+      "columns": {},
+      "loader": "zendesk",
+      "identifier": "users",
+      "tags": [
+        "raw",
+        "zendesk"
+      ]
+    },
+    "source.ecommerce.zendesk.comments": {
+      "unique_id": "source.ecommerce.zendesk.comments",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "ZENDESK",
+      "name": "comments",
+      "source_name": "zendesk",
+      "description": "Raw comments data from zendesk",
+      "columns": {},
+      "loader": "zendesk",
+      "identifier": "comments",
+      "tags": [
+        "raw",
+        "zendesk"
+      ]
+    },
+    "source.ecommerce.zendesk.satisfaction_ratings": {
+      "unique_id": "source.ecommerce.zendesk.satisfaction_ratings",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "ZENDESK",
+      "name": "satisfaction_ratings",
+      "source_name": "zendesk",
+      "description": "Raw satisfaction_ratings data from zendesk",
+      "columns": {},
+      "loader": "zendesk",
+      "identifier": "satisfaction_ratings",
+      "tags": [
+        "raw",
+        "zendesk"
+      ]
+    },
+    "source.ecommerce.salesforce.accounts": {
+      "unique_id": "source.ecommerce.salesforce.accounts",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SALESFORCE",
+      "name": "accounts",
+      "source_name": "salesforce",
+      "description": "Raw accounts data from salesforce",
+      "columns": {},
+      "loader": "salesforce",
+      "identifier": "accounts",
+      "tags": [
+        "raw",
+        "salesforce"
+      ]
+    },
+    "source.ecommerce.salesforce.contacts": {
+      "unique_id": "source.ecommerce.salesforce.contacts",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SALESFORCE",
+      "name": "contacts",
+      "source_name": "salesforce",
+      "description": "Raw contacts data from salesforce",
+      "columns": {},
+      "loader": "salesforce",
+      "identifier": "contacts",
+      "tags": [
+        "raw",
+        "salesforce"
+      ]
+    },
+    "source.ecommerce.salesforce.opportunities": {
+      "unique_id": "source.ecommerce.salesforce.opportunities",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SALESFORCE",
+      "name": "opportunities",
+      "source_name": "salesforce",
+      "description": "Raw opportunities data from salesforce",
+      "columns": {},
+      "loader": "salesforce",
+      "identifier": "opportunities",
+      "tags": [
+        "raw",
+        "salesforce"
+      ]
+    },
+    "source.ecommerce.salesforce.leads": {
+      "unique_id": "source.ecommerce.salesforce.leads",
+      "resource_type": "source",
+      "database": "RAW",
+      "schema": "SALESFORCE",
+      "name": "leads",
+      "source_name": "salesforce",
+      "description": "Raw leads data from salesforce",
+      "columns": {},
+      "loader": "salesforce",
+      "identifier": "leads",
+      "tags": [
+        "raw",
+        "salesforce"
+      ]
+    }
+  },
+  "exposures": {},
+  "metrics": {},
+  "selectors": {},
+  "parent_map": {
+    "model.ecommerce.stg_stripe_payments": [
+      "source.ecommerce.stripe.payments"
+    ],
+    "model.ecommerce.stg_stripe_refunds": [
+      "source.ecommerce.stripe.refunds"
+    ],
+    "model.ecommerce.stg_stripe_customers": [
+      "source.ecommerce.stripe.customers"
+    ],
+    "model.ecommerce.stg_stripe_subscriptions": [
+      "source.ecommerce.stripe.subscriptions"
+    ],
+    "model.ecommerce.stg_stripe_invoices": [
+      "source.ecommerce.stripe.invoices"
+    ],
+    "model.ecommerce.stg_shopify_orders": [
+      "source.ecommerce.shopify.orders"
+    ],
+    "model.ecommerce.stg_shopify_order_items": [
+      "source.ecommerce.shopify.order_items"
+    ],
+    "model.ecommerce.stg_shopify_products": [
+      "source.ecommerce.shopify.products"
+    ],
+    "model.ecommerce.stg_shopify_customers": [
+      "source.ecommerce.shopify.customers"
+    ],
+    "model.ecommerce.stg_shopify_inventory": [
+      "source.ecommerce.shopify.inventory"
+    ],
+    "model.ecommerce.stg_segment_identifies": [
+      "source.ecommerce.segment.identifies"
+    ],
+    "model.ecommerce.stg_segment_tracks": [
+      "source.ecommerce.segment.tracks"
+    ],
+    "model.ecommerce.stg_segment_pages": [
+      "source.ecommerce.segment.pages"
+    ],
+    "model.ecommerce.stg_zendesk_tickets": [
+      "source.ecommerce.zendesk.tickets"
+    ],
+    "model.ecommerce.stg_zendesk_users": [
+      "source.ecommerce.zendesk.users"
+    ],
+    "model.ecommerce.stg_zendesk_satisfaction": [
+      "source.ecommerce.zendesk.satisfaction_ratings"
+    ],
+    "model.ecommerce.stg_salesforce_accounts": [
+      "source.ecommerce.salesforce.accounts"
+    ],
+    "model.ecommerce.stg_salesforce_contacts": [
+      "source.ecommerce.salesforce.contacts"
+    ],
+    "model.ecommerce.stg_salesforce_opportunities": [
+      "source.ecommerce.salesforce.opportunities"
+    ],
+    "model.ecommerce.stg_salesforce_leads": [
+      "source.ecommerce.salesforce.leads"
+    ],
+    "model.ecommerce.int_customer_identities": [
+      "model.ecommerce.stg_stripe_customers",
+      "model.ecommerce.stg_shopify_customers",
+      "model.ecommerce.stg_segment_identifies",
+      "model.ecommerce.stg_zendesk_users",
+      "model.ecommerce.stg_salesforce_contacts"
+    ],
+    "model.ecommerce.int_orders_enriched": [
+      "model.ecommerce.stg_shopify_orders",
+      "model.ecommerce.stg_shopify_order_items",
+      "model.ecommerce.stg_shopify_products",
+      "model.ecommerce.stg_shopify_customers"
+    ],
+    "model.ecommerce.int_payments_with_refunds": [
+      "model.ecommerce.stg_stripe_payments",
+      "model.ecommerce.stg_stripe_refunds"
+    ],
+    "model.ecommerce.int_subscription_history": [
+      "model.ecommerce.stg_stripe_subscriptions",
+      "model.ecommerce.stg_stripe_customers"
+    ],
+    "model.ecommerce.int_support_tickets_enriched": [
+      "model.ecommerce.stg_zendesk_tickets",
+      "model.ecommerce.stg_zendesk_users",
+      "model.ecommerce.stg_zendesk_satisfaction"
+    ],
+    "model.ecommerce.int_user_events": [
+      "model.ecommerce.stg_segment_tracks",
+      "model.ecommerce.stg_segment_pages"
+    ],
+    "model.ecommerce.int_product_performance": [
+      "model.ecommerce.stg_shopify_products",
+      "model.ecommerce.stg_shopify_order_items",
+      "model.ecommerce.stg_shopify_inventory"
+    ],
+    "model.ecommerce.int_sales_pipeline": [
+      "model.ecommerce.stg_salesforce_opportunities",
+      "model.ecommerce.stg_salesforce_accounts",
+      "model.ecommerce.stg_salesforce_contacts"
+    ],
+    "model.ecommerce.int_lead_attribution": [
+      "model.ecommerce.stg_salesforce_leads",
+      "model.ecommerce.stg_segment_tracks"
+    ],
+    "model.ecommerce.int_invoice_payments": [
+      "model.ecommerce.stg_stripe_invoices",
+      "model.ecommerce.stg_stripe_payments"
+    ],
+    "model.ecommerce.dim_customers": [
+      "model.ecommerce.int_customer_identities",
+      "model.ecommerce.int_orders_enriched",
+      "model.ecommerce.int_support_tickets_enriched"
+    ],
+    "model.ecommerce.dim_products": [
+      "model.ecommerce.stg_shopify_products",
+      "model.ecommerce.int_product_performance"
+    ],
+    "model.ecommerce.dim_dates": [],
+    "model.ecommerce.dim_accounts": [
+      "model.ecommerce.stg_salesforce_accounts",
+      "model.ecommerce.int_sales_pipeline"
+    ],
+    "model.ecommerce.fct_orders": [
+      "model.ecommerce.int_orders_enriched",
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.fct_order_items": [
+      "model.ecommerce.stg_shopify_order_items",
+      "model.ecommerce.fct_orders",
+      "model.ecommerce.dim_products"
+    ],
+    "model.ecommerce.fct_payments": [
+      "model.ecommerce.int_payments_with_refunds",
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.fct_subscriptions": [
+      "model.ecommerce.int_subscription_history",
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.fct_support_tickets": [
+      "model.ecommerce.int_support_tickets_enriched",
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.fct_page_views": [
+      "model.ecommerce.int_user_events",
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.fct_events": [
+      "model.ecommerce.int_user_events",
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.fct_opportunities": [
+      "model.ecommerce.int_sales_pipeline",
+      "model.ecommerce.dim_accounts",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.fct_leads": [
+      "model.ecommerce.int_lead_attribution",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.agg_customer_daily": [
+      "model.ecommerce.fct_orders",
+      "model.ecommerce.fct_payments",
+      "model.ecommerce.fct_page_views",
+      "model.ecommerce.dim_customers"
+    ],
+    "model.ecommerce.agg_customer_monthly": [
+      "model.ecommerce.agg_customer_daily"
+    ],
+    "model.ecommerce.agg_product_daily": [
+      "model.ecommerce.fct_order_items",
+      "model.ecommerce.dim_products"
+    ],
+    "model.ecommerce.agg_product_weekly": [
+      "model.ecommerce.agg_product_daily"
+    ],
+    "model.ecommerce.agg_revenue_daily": [
+      "model.ecommerce.fct_payments",
+      "model.ecommerce.fct_orders"
+    ],
+    "model.ecommerce.agg_revenue_monthly": [
+      "model.ecommerce.agg_revenue_daily"
+    ],
+    "model.ecommerce.agg_support_daily": [
+      "model.ecommerce.fct_support_tickets"
+    ],
+    "model.ecommerce.agg_funnel_daily": [
+      "model.ecommerce.fct_page_views",
+      "model.ecommerce.fct_events",
+      "model.ecommerce.fct_orders"
+    ],
+    "model.ecommerce.agg_subscription_monthly": [
+      "model.ecommerce.fct_subscriptions"
+    ],
+    "model.ecommerce.agg_pipeline_weekly": [
+      "model.ecommerce.fct_opportunities",
+      "model.ecommerce.fct_leads"
+    ],
+    "model.ecommerce.rpt_executive_dashboard": [
+      "model.ecommerce.agg_revenue_monthly",
+      "model.ecommerce.agg_subscription_monthly",
+      "model.ecommerce.agg_pipeline_weekly",
+      "model.ecommerce.agg_support_daily"
+    ],
+    "model.ecommerce.rpt_customer_health": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.agg_customer_monthly",
+      "model.ecommerce.fct_support_tickets",
+      "model.ecommerce.fct_subscriptions"
+    ],
+    "model.ecommerce.rpt_product_performance": [
+      "model.ecommerce.dim_products",
+      "model.ecommerce.agg_product_weekly",
+      "model.ecommerce.int_product_performance"
+    ],
+    "model.ecommerce.rpt_cohort_retention": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.fct_orders",
+      "model.ecommerce.agg_customer_monthly"
+    ],
+    "model.ecommerce.rpt_sales_leaderboard": [
+      "model.ecommerce.fct_opportunities",
+      "model.ecommerce.agg_pipeline_weekly"
+    ],
+    "model.ecommerce.rpt_channel_attribution": [
+      "model.ecommerce.fct_leads",
+      "model.ecommerce.fct_orders",
+      "model.ecommerce.agg_funnel_daily"
+    ],
+    "model.ecommerce.rpt_support_sla": [
+      "model.ecommerce.fct_support_tickets",
+      "model.ecommerce.agg_support_daily"
+    ],
+    "model.ecommerce.rpt_churn_analysis": [
+      "model.ecommerce.fct_subscriptions",
+      "model.ecommerce.rpt_customer_health",
+      "model.ecommerce.dim_customers"
+    ],
+    "model.ecommerce.rpt_inventory_forecast": [
+      "model.ecommerce.dim_products",
+      "model.ecommerce.agg_product_weekly",
+      "model.ecommerce.int_product_performance"
+    ],
+    "model.ecommerce.rpt_revenue_forecast": [
+      "model.ecommerce.agg_revenue_monthly",
+      "model.ecommerce.agg_subscription_monthly",
+      "model.ecommerce.agg_pipeline_weekly"
+    ],
+    "model.ecommerce.exp_salesforce_contacts": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.rpt_customer_health"
+    ],
+    "model.ecommerce.exp_hubspot_companies": [
+      "model.ecommerce.dim_accounts",
+      "model.ecommerce.fct_opportunities"
+    ],
+    "model.ecommerce.exp_intercom_users": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.rpt_customer_health",
+      "model.ecommerce.fct_page_views"
+    ],
+    "model.ecommerce.exp_amplitude_events": [
+      "model.ecommerce.fct_events",
+      "model.ecommerce.dim_customers"
+    ],
+    "model.ecommerce.exp_looker_semantic": [
+      "model.ecommerce.rpt_executive_dashboard",
+      "model.ecommerce.rpt_customer_health",
+      "model.ecommerce.rpt_product_performance"
+    ],
+    "model.ecommerce.exp_bi_cube": [
+      "model.ecommerce.agg_revenue_monthly",
+      "model.ecommerce.agg_customer_monthly",
+      "model.ecommerce.agg_product_weekly",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.exp_ml_features": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.agg_customer_monthly",
+      "model.ecommerce.rpt_customer_health",
+      "model.ecommerce.rpt_churn_analysis"
+    ],
+    "model.ecommerce.exp_data_catalog": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.dim_products",
+      "model.ecommerce.dim_accounts",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.snap_customer_state": [
+      "model.ecommerce.dim_customers"
+    ],
+    "model.ecommerce.snap_subscription_state": [
+      "model.ecommerce.fct_subscriptions"
+    ],
+    "model.ecommerce.audit_data_quality": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.dim_products",
+      "model.ecommerce.fct_orders"
+    ],
+    "model.ecommerce.audit_pipeline_runs": [],
+    "model.ecommerce.audit_schema_changes": [
+      "model.ecommerce.exp_data_catalog"
+    ],
+    "model.ecommerce.int_customer_sessions": [
+      "model.ecommerce.stg_segment_pages",
+      "model.ecommerce.stg_segment_tracks",
+      "model.ecommerce.int_customer_identities"
+    ],
+    "model.ecommerce.int_order_refunds": [
+      "model.ecommerce.stg_shopify_orders",
+      "model.ecommerce.int_payments_with_refunds"
+    ],
+    "model.ecommerce.int_customer_ltv": [
+      "model.ecommerce.int_customer_identities",
+      "model.ecommerce.int_orders_enriched",
+      "model.ecommerce.int_subscription_history"
+    ],
+    "model.ecommerce.int_product_categories": [
+      "model.ecommerce.stg_shopify_products"
+    ],
+    "model.ecommerce.int_email_engagement": [
+      "model.ecommerce.stg_segment_tracks",
+      "model.ecommerce.int_customer_identities"
+    ],
+    "model.ecommerce.fct_sessions": [
+      "model.ecommerce.int_customer_sessions",
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.fct_refunds": [
+      "model.ecommerce.int_order_refunds",
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.fct_email_sends": [
+      "model.ecommerce.int_email_engagement",
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.dim_dates"
+    ],
+    "model.ecommerce.agg_session_daily": [
+      "model.ecommerce.fct_sessions"
+    ],
+    "model.ecommerce.agg_refund_monthly": [
+      "model.ecommerce.fct_refunds"
+    ],
+    "model.ecommerce.agg_email_campaign": [
+      "model.ecommerce.fct_email_sends"
+    ],
+    "model.ecommerce.agg_category_weekly": [
+      "model.ecommerce.fct_order_items",
+      "model.ecommerce.int_product_categories"
+    ],
+    "model.ecommerce.agg_cohort_weekly": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.fct_orders"
+    ],
+    "model.ecommerce.agg_geo_daily": [
+      "model.ecommerce.fct_orders",
+      "model.ecommerce.fct_sessions"
+    ],
+    "model.ecommerce.rpt_weekly_metrics": [
+      "model.ecommerce.agg_revenue_monthly",
+      "model.ecommerce.agg_session_daily",
+      "model.ecommerce.agg_funnel_daily"
+    ],
+    "model.ecommerce.rpt_marketing_roi": [
+      "model.ecommerce.rpt_channel_attribution",
+      "model.ecommerce.agg_email_campaign",
+      "model.ecommerce.agg_session_daily"
+    ],
+    "model.ecommerce.rpt_category_trends": [
+      "model.ecommerce.agg_category_weekly",
+      "model.ecommerce.int_product_categories"
+    ],
+    "model.ecommerce.rpt_customer_segments": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.rpt_customer_health",
+      "model.ecommerce.int_customer_ltv"
+    ],
+    "model.ecommerce.rpt_ab_test_results": [
+      "model.ecommerce.fct_sessions",
+      "model.ecommerce.fct_orders",
+      "model.ecommerce.agg_funnel_daily"
+    ],
+    "model.ecommerce.rpt_geo_performance": [
+      "model.ecommerce.agg_geo_daily"
+    ],
+    "model.ecommerce.exp_facebook_audiences": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.rpt_customer_segments",
+      "model.ecommerce.int_customer_ltv"
+    ],
+    "model.ecommerce.exp_google_analytics": [
+      "model.ecommerce.fct_sessions",
+      "model.ecommerce.fct_orders"
+    ],
+    "model.ecommerce.exp_mixpanel_profiles": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.rpt_customer_health"
+    ],
+    "model.ecommerce.exp_zendesk_context": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.rpt_customer_health",
+      "model.ecommerce.fct_support_tickets"
+    ]
+  },
+  "child_map": {
+    "source.ecommerce.stripe.payments": [
+      "model.ecommerce.stg_stripe_payments"
+    ],
+    "source.ecommerce.stripe.refunds": [
+      "model.ecommerce.stg_stripe_refunds"
+    ],
+    "source.ecommerce.stripe.customers": [
+      "model.ecommerce.stg_stripe_customers"
+    ],
+    "source.ecommerce.stripe.subscriptions": [
+      "model.ecommerce.stg_stripe_subscriptions"
+    ],
+    "source.ecommerce.stripe.invoices": [
+      "model.ecommerce.stg_stripe_invoices"
+    ],
+    "source.ecommerce.shopify.orders": [
+      "model.ecommerce.stg_shopify_orders"
+    ],
+    "source.ecommerce.shopify.order_items": [
+      "model.ecommerce.stg_shopify_order_items"
+    ],
+    "source.ecommerce.shopify.products": [
+      "model.ecommerce.stg_shopify_products"
+    ],
+    "source.ecommerce.shopify.customers": [
+      "model.ecommerce.stg_shopify_customers"
+    ],
+    "source.ecommerce.shopify.inventory": [
+      "model.ecommerce.stg_shopify_inventory"
+    ],
+    "source.ecommerce.segment.identifies": [
+      "model.ecommerce.stg_segment_identifies"
+    ],
+    "source.ecommerce.segment.tracks": [
+      "model.ecommerce.stg_segment_tracks"
+    ],
+    "source.ecommerce.segment.pages": [
+      "model.ecommerce.stg_segment_pages"
+    ],
+    "source.ecommerce.zendesk.tickets": [
+      "model.ecommerce.stg_zendesk_tickets"
+    ],
+    "source.ecommerce.zendesk.users": [
+      "model.ecommerce.stg_zendesk_users"
+    ],
+    "source.ecommerce.zendesk.satisfaction_ratings": [
+      "model.ecommerce.stg_zendesk_satisfaction"
+    ],
+    "source.ecommerce.salesforce.accounts": [
+      "model.ecommerce.stg_salesforce_accounts"
+    ],
+    "source.ecommerce.salesforce.contacts": [
+      "model.ecommerce.stg_salesforce_contacts"
+    ],
+    "source.ecommerce.salesforce.opportunities": [
+      "model.ecommerce.stg_salesforce_opportunities"
+    ],
+    "source.ecommerce.salesforce.leads": [
+      "model.ecommerce.stg_salesforce_leads"
+    ],
+    "model.ecommerce.stg_stripe_customers": [
+      "model.ecommerce.int_customer_identities",
+      "model.ecommerce.int_subscription_history"
+    ],
+    "model.ecommerce.stg_shopify_customers": [
+      "model.ecommerce.int_customer_identities",
+      "model.ecommerce.int_orders_enriched"
+    ],
+    "model.ecommerce.stg_segment_identifies": [
+      "model.ecommerce.int_customer_identities"
+    ],
+    "model.ecommerce.stg_zendesk_users": [
+      "model.ecommerce.int_customer_identities",
+      "model.ecommerce.int_support_tickets_enriched"
+    ],
+    "model.ecommerce.stg_salesforce_contacts": [
+      "model.ecommerce.int_customer_identities",
+      "model.ecommerce.int_sales_pipeline"
+    ],
+    "model.ecommerce.stg_shopify_orders": [
+      "model.ecommerce.int_orders_enriched",
+      "model.ecommerce.int_order_refunds"
+    ],
+    "model.ecommerce.stg_shopify_order_items": [
+      "model.ecommerce.int_orders_enriched",
+      "model.ecommerce.int_product_performance",
+      "model.ecommerce.fct_order_items"
+    ],
+    "model.ecommerce.stg_shopify_products": [
+      "model.ecommerce.int_orders_enriched",
+      "model.ecommerce.int_product_performance",
+      "model.ecommerce.dim_products",
+      "model.ecommerce.int_product_categories"
+    ],
+    "model.ecommerce.stg_stripe_payments": [
+      "model.ecommerce.int_payments_with_refunds",
+      "model.ecommerce.int_invoice_payments"
+    ],
+    "model.ecommerce.stg_stripe_refunds": [
+      "model.ecommerce.int_payments_with_refunds"
+    ],
+    "model.ecommerce.stg_stripe_subscriptions": [
+      "model.ecommerce.int_subscription_history"
+    ],
+    "model.ecommerce.stg_zendesk_tickets": [
+      "model.ecommerce.int_support_tickets_enriched"
+    ],
+    "model.ecommerce.stg_zendesk_satisfaction": [
+      "model.ecommerce.int_support_tickets_enriched"
+    ],
+    "model.ecommerce.stg_segment_tracks": [
+      "model.ecommerce.int_user_events",
+      "model.ecommerce.int_lead_attribution",
+      "model.ecommerce.int_customer_sessions",
+      "model.ecommerce.int_email_engagement"
+    ],
+    "model.ecommerce.stg_segment_pages": [
+      "model.ecommerce.int_user_events",
+      "model.ecommerce.int_customer_sessions"
+    ],
+    "model.ecommerce.stg_shopify_inventory": [
+      "model.ecommerce.int_product_performance"
+    ],
+    "model.ecommerce.stg_salesforce_opportunities": [
+      "model.ecommerce.int_sales_pipeline"
+    ],
+    "model.ecommerce.stg_salesforce_accounts": [
+      "model.ecommerce.int_sales_pipeline",
+      "model.ecommerce.dim_accounts"
+    ],
+    "model.ecommerce.stg_salesforce_leads": [
+      "model.ecommerce.int_lead_attribution"
+    ],
+    "model.ecommerce.stg_stripe_invoices": [
+      "model.ecommerce.int_invoice_payments"
+    ],
+    "model.ecommerce.int_customer_identities": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.int_customer_sessions",
+      "model.ecommerce.int_customer_ltv",
+      "model.ecommerce.int_email_engagement"
+    ],
+    "model.ecommerce.int_orders_enriched": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.fct_orders",
+      "model.ecommerce.int_customer_ltv"
+    ],
+    "model.ecommerce.int_support_tickets_enriched": [
+      "model.ecommerce.dim_customers",
+      "model.ecommerce.fct_support_tickets"
+    ],
+    "model.ecommerce.int_product_performance": [
+      "model.ecommerce.dim_products",
+      "model.ecommerce.rpt_product_performance",
+      "model.ecommerce.rpt_inventory_forecast"
+    ],
+    "model.ecommerce.int_sales_pipeline": [
+      "model.ecommerce.dim_accounts",
+      "model.ecommerce.fct_opportunities"
+    ],
+    "model.ecommerce.dim_customers": [
+      "model.ecommerce.fct_orders",
+      "model.ecommerce.fct_payments",
+      "model.ecommerce.fct_subscriptions",
+      "model.ecommerce.fct_support_tickets",
+      "model.ecommerce.fct_page_views",
+      "model.ecommerce.fct_events",
+      "model.ecommerce.agg_customer_daily",
+      "model.ecommerce.rpt_customer_health",
+      "model.ecommerce.rpt_cohort_retention",
+      "model.ecommerce.rpt_churn_analysis",
+      "model.ecommerce.exp_salesforce_contacts",
+      "model.ecommerce.exp_intercom_users",
+      "model.ecommerce.exp_amplitude_events",
+      "model.ecommerce.exp_ml_features",
+      "model.ecommerce.exp_data_catalog",
+      "model.ecommerce.snap_customer_state",
+      "model.ecommerce.audit_data_quality",
+      "model.ecommerce.fct_sessions",
+      "model.ecommerce.fct_refunds",
+      "model.ecommerce.fct_email_sends",
+      "model.ecommerce.agg_cohort_weekly",
+      "model.ecommerce.rpt_customer_segments",
+      "model.ecommerce.exp_facebook_audiences",
+      "model.ecommerce.exp_mixpanel_profiles",
+      "model.ecommerce.exp_zendesk_context"
+    ],
+    "model.ecommerce.dim_dates": [
+      "model.ecommerce.fct_orders",
+      "model.ecommerce.fct_payments",
+      "model.ecommerce.fct_subscriptions",
+      "model.ecommerce.fct_support_tickets",
+      "model.ecommerce.fct_page_views",
+      "model.ecommerce.fct_events",
+      "model.ecommerce.fct_opportunities",
+      "model.ecommerce.fct_leads",
+      "model.ecommerce.exp_bi_cube",
+      "model.ecommerce.exp_data_catalog",
+      "model.ecommerce.fct_sessions",
+      "model.ecommerce.fct_refunds",
+      "model.ecommerce.fct_email_sends"
+    ],
+    "model.ecommerce.fct_orders": [
+      "model.ecommerce.fct_order_items",
+      "model.ecommerce.agg_customer_daily",
+      "model.ecommerce.agg_revenue_daily",
+      "model.ecommerce.agg_funnel_daily",
+      "model.ecommerce.rpt_cohort_retention",
+      "model.ecommerce.rpt_channel_attribution",
+      "model.ecommerce.audit_data_quality",
+      "model.ecommerce.agg_cohort_weekly",
+      "model.ecommerce.agg_geo_daily",
+      "model.ecommerce.rpt_ab_test_results",
+      "model.ecommerce.exp_google_analytics"
+    ],
+    "model.ecommerce.dim_products": [
+      "model.ecommerce.fct_order_items",
+      "model.ecommerce.agg_product_daily",
+      "model.ecommerce.rpt_product_performance",
+      "model.ecommerce.rpt_inventory_forecast",
+      "model.ecommerce.exp_data_catalog",
+      "model.ecommerce.audit_data_quality"
+    ],
+    "model.ecommerce.int_payments_with_refunds": [
+      "model.ecommerce.fct_payments",
+      "model.ecommerce.int_order_refunds"
+    ],
+    "model.ecommerce.int_subscription_history": [
+      "model.ecommerce.fct_subscriptions",
+      "model.ecommerce.int_customer_ltv"
+    ],
+    "model.ecommerce.int_user_events": [
+      "model.ecommerce.fct_page_views",
+      "model.ecommerce.fct_events"
+    ],
+    "model.ecommerce.dim_accounts": [
+      "model.ecommerce.fct_opportunities",
+      "model.ecommerce.exp_hubspot_companies",
+      "model.ecommerce.exp_data_catalog"
+    ],
+    "model.ecommerce.int_lead_attribution": [
+      "model.ecommerce.fct_leads"
+    ],
+    "model.ecommerce.fct_payments": [
+      "model.ecommerce.agg_customer_daily",
+      "model.ecommerce.agg_revenue_daily"
+    ],
+    "model.ecommerce.fct_page_views": [
+      "model.ecommerce.agg_customer_daily",
+      "model.ecommerce.agg_funnel_daily",
+      "model.ecommerce.exp_intercom_users"
+    ],
+    "model.ecommerce.agg_customer_daily": [
+      "model.ecommerce.agg_customer_monthly"
+    ],
+    "model.ecommerce.fct_order_items": [
+      "model.ecommerce.agg_product_daily",
+      "model.ecommerce.agg_category_weekly"
+    ],
+    "model.ecommerce.agg_product_daily": [
+      "model.ecommerce.agg_product_weekly"
+    ],
+    "model.ecommerce.agg_revenue_daily": [
+      "model.ecommerce.agg_revenue_monthly"
+    ],
+    "model.ecommerce.fct_support_tickets": [
+      "model.ecommerce.agg_support_daily",
+      "model.ecommerce.rpt_customer_health",
+      "model.ecommerce.rpt_support_sla",
+      "model.ecommerce.exp_zendesk_context"
+    ],
+    "model.ecommerce.fct_events": [
+      "model.ecommerce.agg_funnel_daily",
+      "model.ecommerce.exp_amplitude_events"
+    ],
+    "model.ecommerce.fct_subscriptions": [
+      "model.ecommerce.agg_subscription_monthly",
+      "model.ecommerce.rpt_customer_health",
+      "model.ecommerce.rpt_churn_analysis",
+      "model.ecommerce.snap_subscription_state"
+    ],
+    "model.ecommerce.fct_opportunities": [
+      "model.ecommerce.agg_pipeline_weekly",
+      "model.ecommerce.rpt_sales_leaderboard",
+      "model.ecommerce.exp_hubspot_companies"
+    ],
+    "model.ecommerce.fct_leads": [
+      "model.ecommerce.agg_pipeline_weekly",
+      "model.ecommerce.rpt_channel_attribution"
+    ],
+    "model.ecommerce.agg_revenue_monthly": [
+      "model.ecommerce.rpt_executive_dashboard",
+      "model.ecommerce.rpt_revenue_forecast",
+      "model.ecommerce.exp_bi_cube",
+      "model.ecommerce.rpt_weekly_metrics"
+    ],
+    "model.ecommerce.agg_subscription_monthly": [
+      "model.ecommerce.rpt_executive_dashboard",
+      "model.ecommerce.rpt_revenue_forecast"
+    ],
+    "model.ecommerce.agg_pipeline_weekly": [
+      "model.ecommerce.rpt_executive_dashboard",
+      "model.ecommerce.rpt_sales_leaderboard",
+      "model.ecommerce.rpt_revenue_forecast"
+    ],
+    "model.ecommerce.agg_support_daily": [
+      "model.ecommerce.rpt_executive_dashboard",
+      "model.ecommerce.rpt_support_sla"
+    ],
+    "model.ecommerce.agg_customer_monthly": [
+      "model.ecommerce.rpt_customer_health",
+      "model.ecommerce.rpt_cohort_retention",
+      "model.ecommerce.exp_bi_cube",
+      "model.ecommerce.exp_ml_features"
+    ],
+    "model.ecommerce.agg_product_weekly": [
+      "model.ecommerce.rpt_product_performance",
+      "model.ecommerce.rpt_inventory_forecast",
+      "model.ecommerce.exp_bi_cube"
+    ],
+    "model.ecommerce.agg_funnel_daily": [
+      "model.ecommerce.rpt_channel_attribution",
+      "model.ecommerce.rpt_weekly_metrics",
+      "model.ecommerce.rpt_ab_test_results"
+    ],
+    "model.ecommerce.rpt_customer_health": [
+      "model.ecommerce.rpt_churn_analysis",
+      "model.ecommerce.exp_salesforce_contacts",
+      "model.ecommerce.exp_intercom_users",
+      "model.ecommerce.exp_looker_semantic",
+      "model.ecommerce.exp_ml_features",
+      "model.ecommerce.rpt_customer_segments",
+      "model.ecommerce.exp_mixpanel_profiles",
+      "model.ecommerce.exp_zendesk_context"
+    ],
+    "model.ecommerce.rpt_executive_dashboard": [
+      "model.ecommerce.exp_looker_semantic"
+    ],
+    "model.ecommerce.rpt_product_performance": [
+      "model.ecommerce.exp_looker_semantic"
+    ],
+    "model.ecommerce.rpt_churn_analysis": [
+      "model.ecommerce.exp_ml_features"
+    ],
+    "model.ecommerce.exp_data_catalog": [
+      "model.ecommerce.audit_schema_changes"
+    ],
+    "model.ecommerce.int_customer_sessions": [
+      "model.ecommerce.fct_sessions"
+    ],
+    "model.ecommerce.int_order_refunds": [
+      "model.ecommerce.fct_refunds"
+    ],
+    "model.ecommerce.int_email_engagement": [
+      "model.ecommerce.fct_email_sends"
+    ],
+    "model.ecommerce.fct_sessions": [
+      "model.ecommerce.agg_session_daily",
+      "model.ecommerce.agg_geo_daily",
+      "model.ecommerce.rpt_ab_test_results",
+      "model.ecommerce.exp_google_analytics"
+    ],
+    "model.ecommerce.fct_refunds": [
+      "model.ecommerce.agg_refund_monthly"
+    ],
+    "model.ecommerce.fct_email_sends": [
+      "model.ecommerce.agg_email_campaign"
+    ],
+    "model.ecommerce.int_product_categories": [
+      "model.ecommerce.agg_category_weekly",
+      "model.ecommerce.rpt_category_trends"
+    ],
+    "model.ecommerce.agg_session_daily": [
+      "model.ecommerce.rpt_weekly_metrics",
+      "model.ecommerce.rpt_marketing_roi"
+    ],
+    "model.ecommerce.rpt_channel_attribution": [
+      "model.ecommerce.rpt_marketing_roi"
+    ],
+    "model.ecommerce.agg_email_campaign": [
+      "model.ecommerce.rpt_marketing_roi"
+    ],
+    "model.ecommerce.agg_category_weekly": [
+      "model.ecommerce.rpt_category_trends"
+    ],
+    "model.ecommerce.int_customer_ltv": [
+      "model.ecommerce.rpt_customer_segments",
+      "model.ecommerce.exp_facebook_audiences"
+    ],
+    "model.ecommerce.agg_geo_daily": [
+      "model.ecommerce.rpt_geo_performance"
+    ],
+    "model.ecommerce.rpt_customer_segments": [
+      "model.ecommerce.exp_facebook_audiences"
+    ]
+  }
+}

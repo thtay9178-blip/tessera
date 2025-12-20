@@ -33,11 +33,13 @@ class AssetUpdate(BaseModel):
     metadata: dict[str, Any] | None = None
 
 
-class Asset(AssetBase):
+class Asset(BaseModel):
     """Asset entity."""
 
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    fqn: str
     owner_team_id: UUID
+    metadata: dict[str, Any] = Field(default_factory=dict, validation_alias="metadata_")
     created_at: datetime

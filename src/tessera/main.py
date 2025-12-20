@@ -3,7 +3,7 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 
 from tessera.api import assets, contracts, proposals, registrations, sync, teams
 from tessera.db import init_db
@@ -23,13 +23,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Include routers
-app.include_router(teams.router, prefix="/teams", tags=["teams"])
-app.include_router(assets.router, prefix="/assets", tags=["assets"])
-app.include_router(contracts.router, prefix="/contracts", tags=["contracts"])
-app.include_router(registrations.router, prefix="/registrations", tags=["registrations"])
-app.include_router(proposals.router, prefix="/proposals", tags=["proposals"])
-app.include_router(sync.router, prefix="/sync", tags=["sync"])
+# API v1 router
+api_v1 = APIRouter(prefix="/api/v1")
+api_v1.include_router(teams.router, prefix="/teams", tags=["teams"])
+api_v1.include_router(assets.router, prefix="/assets", tags=["assets"])
+api_v1.include_router(contracts.router, prefix="/contracts", tags=["contracts"])
+api_v1.include_router(registrations.router, prefix="/registrations", tags=["registrations"])
+api_v1.include_router(proposals.router, prefix="/proposals", tags=["proposals"])
+api_v1.include_router(sync.router, prefix="/sync", tags=["sync"])
+
+app.include_router(api_v1)
 
 
 @app.get("/health")
