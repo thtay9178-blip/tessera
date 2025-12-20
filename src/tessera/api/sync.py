@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tessera.config import settings
 from tessera.db import AssetDB, ContractDB, RegistrationDB, TeamDB, get_session
+from tessera.models.enums import CompatibilityMode, ContractStatus, RegistrationStatus
 
 router = APIRouter()
 
@@ -193,21 +194,25 @@ async def sync_pull(
                 )
                 existing_contract = result.scalar_one_or_none()
 
+                # Parse enums from strings
+                compat_mode = CompatibilityMode(contract_data["compatibility_mode"])
+                contract_status = ContractStatus(contract_data["status"])
+
                 if existing_contract:
                     existing_contract.version = contract_data["version"]
                     existing_contract.schema_def = contract_data["schema"]
-                    existing_contract.compatibility_mode = contract_data["compatibility_mode"]
+                    existing_contract.compatibility_mode = compat_mode
                     existing_contract.guarantees = contract_data.get("guarantees")
-                    existing_contract.status = contract_data["status"]
+                    existing_contract.status = contract_status
                 else:
                     new_contract = ContractDB(
                         id=contract_id,
                         asset_id=asset_id,
                         version=contract_data["version"],
                         schema_def=contract_data["schema"],
-                        compatibility_mode=contract_data["compatibility_mode"],
+                        compatibility_mode=compat_mode,
                         guarantees=contract_data.get("guarantees"),
-                        status=contract_data["status"],
+                        status=contract_status,
                         published_by=UUID(asset_data["owner_team_id"]),
                     )
                     session.add(new_contract)
@@ -216,6 +221,7 @@ async def sync_pull(
                 # Import registrations
                 for reg_data in contract_data.get("registrations", []):
                     reg_id = UUID(reg_data["id"])
+                    reg_status = RegistrationStatus(reg_data["status"])
 
                     result = await session.execute(
                         select(RegistrationDB).where(RegistrationDB.id == reg_id)
@@ -224,14 +230,14 @@ async def sync_pull(
 
                     if existing_reg:
                         existing_reg.pinned_version = reg_data.get("pinned_version")
-                        existing_reg.status = reg_data["status"]
+                        existing_reg.status = reg_status
                     else:
                         new_reg = RegistrationDB(
                             id=reg_id,
                             contract_id=contract_id,
                             consumer_team_id=UUID(reg_data["consumer_team_id"]),
                             pinned_version=reg_data.get("pinned_version"),
-                            status=reg_data["status"],
+                            status=reg_status,
                         )
                         session.add(new_reg)
 

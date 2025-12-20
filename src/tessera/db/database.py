@@ -2,6 +2,7 @@
 
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from tessera.config import settings
@@ -12,8 +13,13 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 
 
 async def init_db() -> None:
-    """Initialize database tables."""
+    """Initialize database schemas and tables."""
     async with engine.begin() as conn:
+        # Create schemas first (required for table creation)
+        await conn.execute(text("CREATE SCHEMA IF NOT EXISTS core"))
+        await conn.execute(text("CREATE SCHEMA IF NOT EXISTS workflow"))
+        await conn.execute(text("CREATE SCHEMA IF NOT EXISTS audit"))
+        # Then create tables
         await conn.run_sync(Base.metadata.create_all)
 
 

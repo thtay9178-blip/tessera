@@ -1,6 +1,6 @@
 """Proposals API endpoints."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from tessera.db import AcknowledgmentDB, AssetDB, ProposalDB, get_session
 from tessera.models import Acknowledgment, AcknowledgmentCreate, Proposal, ProposalCreate
 from tessera.models.enums import ChangeType, ProposalStatus
+from tessera.services import log_proposal_acknowledged, log_proposal_force_approved
 
 router = APIRouter()
 
@@ -71,6 +72,18 @@ async def acknowledge_proposal(
     if proposal.status != ProposalStatus.PENDING:
         raise HTTPException(status_code=400, detail="Proposal is not pending")
 
+    # Check for duplicate acknowledgment from same team
+    result = await session.execute(
+        select(AcknowledgmentDB)
+        .where(AcknowledgmentDB.proposal_id == proposal_id)
+        .where(AcknowledgmentDB.consumer_team_id == ack.consumer_team_id)
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=400,
+            detail="This team has already acknowledged this proposal"
+        )
+
     db_ack = AcknowledgmentDB(
         proposal_id=proposal_id,
         consumer_team_id=ack.consumer_team_id,
@@ -81,6 +94,15 @@ async def acknowledge_proposal(
     session.add(db_ack)
     await session.flush()
     await session.refresh(db_ack)
+
+    await log_proposal_acknowledged(
+        session=session,
+        proposal_id=proposal_id,
+        consumer_team_id=ack.consumer_team_id,
+        response=str(ack.response),
+        notes=ack.notes,
+    )
+
     return db_ack
 
 
@@ -99,7 +121,7 @@ async def withdraw_proposal(
         raise HTTPException(status_code=400, detail="Proposal is not pending")
 
     proposal.status = ProposalStatus.WITHDRAWN
-    proposal.resolved_at = datetime.utcnow()
+    proposal.resolved_at = datetime.now(timezone.utc)
     await session.flush()
     await session.refresh(proposal)
     return proposal
@@ -108,6 +130,7 @@ async def withdraw_proposal(
 @router.post("/{proposal_id}/force", response_model=Proposal)
 async def force_proposal(
     proposal_id: UUID,
+    actor_id: UUID = Query(..., description="Team ID of the actor forcing approval"),
     session: AsyncSession = Depends(get_session),
 ) -> ProposalDB:
     """Force-approve a proposal (bypassing consumer acknowledgments)."""
@@ -119,9 +142,15 @@ async def force_proposal(
     if proposal.status != ProposalStatus.PENDING:
         raise HTTPException(status_code=400, detail="Proposal is not pending")
 
-    # TODO: Log this force-publish to audit table
     proposal.status = ProposalStatus.APPROVED
-    proposal.resolved_at = datetime.utcnow()
+    proposal.resolved_at = datetime.now(timezone.utc)
     await session.flush()
     await session.refresh(proposal)
+
+    await log_proposal_force_approved(
+        session=session,
+        proposal_id=proposal_id,
+        actor_id=actor_id,
+    )
+
     return proposal
