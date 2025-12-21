@@ -17,7 +17,12 @@ dependencies = [
     "pyyaml>=6.0.0",
     "greenlet>=3.3.0",
     "jsonschema>=4.20.0",
+    "typer>=0.15.0",
+    "rich>=13.0.0",
 ]
+
+[project.scripts]
+tessera = "tessera.cli:app"
 
 [project.optional-dependencies]
 dev = [
