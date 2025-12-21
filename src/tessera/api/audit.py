@@ -110,9 +110,7 @@ async def get_audit_event(
     session: AsyncSession = Depends(get_session),
 ) -> AuditEventResponse:
     """Get a specific audit event by ID."""
-    result = await session.execute(
-        select(AuditEventDB).where(AuditEventDB.id == event_id)
-    )
+    result = await session.execute(select(AuditEventDB).where(AuditEventDB.id == event_id))
     event = result.scalar_one_or_none()
     if not event:
         raise NotFoundError(
