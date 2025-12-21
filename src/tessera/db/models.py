@@ -228,7 +228,7 @@ class APIKeyDB(Base):
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     key_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
-    key_prefix: Mapped[str] = mapped_column(String(12), nullable=False)
+    key_prefix: Mapped[str] = mapped_column(String(20), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     team_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey(_fk_ref("teams", "core")), nullable=False
