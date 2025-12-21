@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tessera.api.auth import Auth, OptionalAuth, RequireWrite
+from tessera.api.auth import Auth, RequireWrite
 from tessera.api.pagination import PaginationParams, paginate, pagination_params
 from tessera.db import (
     AssetDB,
@@ -28,7 +28,7 @@ from tessera.models import (
     DependencyCreate,
     Proposal,
 )
-from tessera.models.enums import APIKeyScope, ContractStatus, RegistrationStatus
+from tessera.models.enums import ContractStatus, RegistrationStatus
 from tessera.services import (
     check_compatibility,
     diff_schemas,

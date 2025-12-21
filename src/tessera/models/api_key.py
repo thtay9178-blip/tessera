@@ -11,7 +11,9 @@ from tessera.models.enums import APIKeyScope
 class APIKeyCreate(BaseModel):
     """Request model for creating an API key."""
 
-    name: str = Field(..., min_length=1, max_length=255, description="Human-readable name for the key")
+    name: str = Field(
+        ..., min_length=1, max_length=255, description="Human-readable name for the key"
+    )
     team_id: UUID = Field(..., description="Team this key belongs to")
     scopes: list[APIKeyScope] = Field(
         default=[APIKeyScope.READ, APIKeyScope.WRITE],

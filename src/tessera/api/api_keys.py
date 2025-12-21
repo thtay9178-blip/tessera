@@ -10,6 +10,7 @@ from tessera.db.database import get_session
 from tessera.models.api_key import APIKey, APIKeyCreate, APIKeyCreated, APIKeyList
 from tessera.models.enums import APIKeyScope
 from tessera.services import audit
+from tessera.services.audit import AuditAction
 from tessera.services.auth import (
     create_api_key,
     get_api_key,
@@ -40,7 +41,7 @@ async def create_key(
             session=session,
             entity_type="api_key",
             entity_id=api_key.id,
-            action="created",
+            action=AuditAction.API_KEY_CREATED,
             actor_id=auth.team_id,
             payload={
                 "name": api_key.name,
@@ -124,7 +125,7 @@ async def revoke_key(
         session=session,
         entity_type="api_key",
         entity_id=api_key.id,
-        action="revoked",
+        action=AuditAction.API_KEY_REVOKED,
         actor_id=auth.team_id,
         payload={
             "name": api_key.name,

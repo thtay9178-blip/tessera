@@ -56,8 +56,8 @@ async def _verify_can_create_team(
         return
 
     # Check regular API key with admin scope
-    from tessera.services.auth import validate_api_key
     from tessera.models.enums import APIKeyScope
+    from tessera.services.auth import validate_api_key
 
     result = await validate_api_key(session, key)
     if not result:

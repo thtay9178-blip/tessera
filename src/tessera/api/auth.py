@@ -1,5 +1,6 @@
 """Authentication dependencies for API endpoints."""
 
+from collections.abc import Awaitable, Callable
 from typing import Annotated
 from uuid import UUID
 
@@ -71,8 +72,9 @@ async def get_auth_context(
     # Check if auth is disabled (development only)
     if settings.auth_disabled:
         # Return a mock auth context for development
-        from sqlalchemy import select
         from uuid import uuid4
+
+        from sqlalchemy import select
 
         from tessera.db.models import TeamDB
 
@@ -116,7 +118,7 @@ async def get_auth_context(
             status_code=401,
             detail={
                 "code": "INVALID_AUTH_HEADER",
-                "message": "Invalid Authorization header format. Use 'Authorization: Bearer <api_key>'",
+                "message": "Invalid format. Use 'Authorization: Bearer <api_key>'",
             },
             headers={"WWW-Authenticate": "Bearer"},
         )
@@ -152,8 +154,8 @@ async def get_auth_context(
         )
 
     # Validate the API key
-    result = await validate_api_key(session, api_key)
-    if not result:
+    validated = await validate_api_key(session, api_key)
+    if not validated:
         raise HTTPException(
             status_code=401,
             detail={
@@ -163,7 +165,7 @@ async def get_auth_context(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    api_key_db, team_db = result
+    api_key_db, team_db = validated
     scopes = [APIKeyScope(s) for s in api_key_db.scopes]
 
     return AuthContext(
@@ -200,7 +202,9 @@ async def get_optional_auth_context(
 OptionalAuth = Annotated[AuthContext | None, Depends(get_optional_auth_context)]
 
 
-def require_scope(scope: APIKeyScope):
+def require_scope(
+    scope: APIKeyScope,
+) -> Callable[..., Awaitable[None]]:
     """Dependency factory that requires a specific scope.
 
     Usage:

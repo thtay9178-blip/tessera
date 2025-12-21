@@ -42,6 +42,10 @@ class AuditAction(StrEnum):
     PROPOSAL_APPROVED = "proposal.approved"
     PROPOSAL_REJECTED = "proposal.rejected"
 
+    # API Key actions
+    API_KEY_CREATED = "api_key.created"
+    API_KEY_REVOKED = "api_key.revoked"
+
 
 async def log_event(
     session: AsyncSession,

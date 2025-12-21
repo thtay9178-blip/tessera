@@ -10,7 +10,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from tessera.models.enums import (
     AcknowledgmentResponseType,
-    APIKeyScope,
     ChangeType,
     CompatibilityMode,
     ContractStatus,
