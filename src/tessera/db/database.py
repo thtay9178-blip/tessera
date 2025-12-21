@@ -22,17 +22,22 @@ Database Support
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from tessera.config import settings
 from tessera.db.models import Base
 
 # Lazy engine initialization to avoid creating connections at import time
-_engine = None
-_async_session = None
+_engine: AsyncEngine | None = None
+_async_session: async_sessionmaker[AsyncSession] | None = None
 
 
-def get_engine():
+def get_engine() -> AsyncEngine:
     """Get or create the database engine (lazy initialization)."""
     global _engine
     if _engine is None:
@@ -40,15 +45,17 @@ def get_engine():
     return _engine
 
 
-def get_async_session_maker():
+def get_async_session_maker() -> async_sessionmaker[AsyncSession]:
     """Get or create the async session maker."""
     global _async_session
     if _async_session is None:
-        _async_session = async_sessionmaker(get_engine(), class_=AsyncSession, expire_on_commit=False)
+        _async_session = async_sessionmaker(
+            get_engine(), class_=AsyncSession, expire_on_commit=False
+        )
     return _async_session
 
 
-async def dispose_engine():
+async def dispose_engine() -> None:
     """Dispose of the database engine and clean up connections."""
     global _engine, _async_session
     if _engine is not None:
