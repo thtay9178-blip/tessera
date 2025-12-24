@@ -9,13 +9,30 @@
 <body>
   <div class="container">
     <header>
-      <h1><a href="/">TESSERA</a></h1>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1><a href="/"><img src="/static/images/logo.png" alt="Tessera" class="logo"></a></h1>
+        <div class="user-menu" style="font-size: 0.875rem;">
+          {% if current_user %}
+          <span style="color: var(--gray);">{{ current_user.name }}</span>
+          <span class="status status-active" style="margin-left: 0.5rem;">{{ current_user.role }}</span>
+          <a href="/settings" style="margin-left: 1rem;">Settings</a>
+          <a href="/logout" style="margin-left: 0.5rem;">Logout</a>
+          {% else %}
+          <a href="/login">Login</a>
+          {% endif %}
+        </div>
+      </div>
       <nav>
         <a href="/" {% if active_page == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
+        <a href="/users" {% if active_page == 'users' %}class="active"{% endif %}>Users</a>
         <a href="/teams" {% if active_page == 'teams' %}class="active"{% endif %}>Teams</a>
         <a href="/assets" {% if active_page == 'assets' %}class="active"{% endif %}>Assets</a>
         <a href="/contracts" {% if active_page == 'contracts' %}class="active"{% endif %}>Contracts</a>
         <a href="/proposals" {% if active_page == 'proposals' %}class="active"{% endif %}>Proposals</a>
+        <a href="/import" {% if active_page == 'import' %}class="active"{% endif %}>Import</a>
+        {% if current_user and current_user.role == 'admin' %}
+        <a href="/admin/audit" {% if active_page == 'audit' %}class="active"{% endif %}>Audit Log</a>
+        {% endif %}
       </nav>
     </header>
 
@@ -26,11 +43,11 @@
     </main>
 
     <footer>
-      Tessera &mdash; Data Contract Coordination
+      Tessera
     </footer>
   </div>
 
-  <script src="/static/js/api.js"></script>
+  <script src="/static/js/api.js?v=2"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -21,16 +21,19 @@ from tessera.api.rate_limit import limit_read, limit_write
 from tessera.db import (
     AcknowledgmentDB,
     AssetDB,
+    AuditRunDB,
     ContractDB,
     ProposalDB,
     RegistrationDB,
     TeamDB,
+    UserDB,
     get_session,
 )
 from tessera.models import Acknowledgment, AcknowledgmentCreate, Contract, Proposal
 from tessera.models.enums import (
     AcknowledgmentResponseType,
     APIKeyScope,
+    AuditRunStatus,
     CompatibilityMode,
     ContractStatus,
     ProposalStatus,
@@ -55,11 +58,37 @@ from tessera.services.webhooks import (
 router = APIRouter()
 
 
+async def _get_asset_audit_info(session: AsyncSession, asset_id: UUID) -> dict[str, Any] | None:
+    """Get the most recent audit run info for an asset.
+
+    Returns a dict with audit status info, or None if no audits exist.
+    """
+    from sqlalchemy import desc
+
+    result = await session.execute(
+        select(AuditRunDB)
+        .where(AuditRunDB.asset_id == asset_id)
+        .order_by(desc(AuditRunDB.run_at))
+        .limit(1)
+    )
+    audit_run = result.scalar_one_or_none()
+    if not audit_run:
+        return None
+    return {
+        "status": audit_run.status.value,
+        "guarantees_failed": audit_run.guarantees_failed,
+        "run_at": audit_run.run_at.isoformat(),
+        "triggered_by": audit_run.triggered_by,
+        "is_passing": audit_run.status == AuditRunStatus.PASSED,
+    }
+
+
 class PublishRequest(BaseModel):
     """Request body for publishing a contract from a proposal."""
 
     version: str
     published_by: UUID
+    published_by_user_id: UUID | None = None
 
 
 async def check_proposal_completion(
@@ -300,9 +329,25 @@ async def get_proposal_status(
     team_ids_to_lookup.update(ack.consumer_team_id for ack in acknowledgments)
     team_ids_to_lookup.update(reg.consumer_team_id for reg in registrations)
 
+    # Collect all user IDs we need to look up
+    user_ids_to_lookup: set[UUID] = set()
+    if proposal.proposed_by_user_id:
+        user_ids_to_lookup.add(proposal.proposed_by_user_id)
+    for ack in acknowledgments:
+        if ack.acknowledged_by_user_id:
+            user_ids_to_lookup.add(ack.acknowledged_by_user_id)
+
     # Batch fetch all teams in single query
     teams_result = await session.execute(select(TeamDB).where(TeamDB.id.in_(team_ids_to_lookup)))
     teams_map: dict[UUID, TeamDB] = {t.id: t for t in teams_result.scalars().all()}
+
+    # Batch fetch all users in single query
+    users_map: dict[UUID, UserDB] = {}
+    if user_ids_to_lookup:
+        users_result = await session.execute(
+            select(UserDB).where(UserDB.id.in_(user_ids_to_lookup))
+        )
+        users_map = {u.id: u for u in users_result.scalars().all()}
 
     # Build acknowledgment details
     ack_list = []
@@ -311,12 +356,17 @@ async def get_proposal_status(
     for ack in acknowledgments:
         acknowledged_team_ids.add(ack.consumer_team_id)
         team = teams_map.get(ack.consumer_team_id)
+        user = users_map.get(ack.acknowledged_by_user_id) if ack.acknowledged_by_user_id else None
         if str(ack.response) == "blocked":
             blocked_count += 1
         ack_list.append(
             {
                 "consumer_team_id": str(ack.consumer_team_id),
                 "consumer_team_name": team.name if team else "Unknown",
+                "acknowledged_by_user_id": str(ack.acknowledged_by_user_id)
+                if ack.acknowledged_by_user_id
+                else None,
+                "acknowledged_by_user_name": user.name if user else None,
                 "response": str(ack.response),
                 "responded_at": ack.responded_at.isoformat(),
                 "notes": ack.notes,
@@ -337,7 +387,22 @@ async def get_proposal_status(
             )
 
     proposer = teams_map.get(proposal.proposed_by)
+    proposer_user = (
+        users_map.get(proposal.proposed_by_user_id) if proposal.proposed_by_user_id else None
+    )
     total_consumers = len(registrations)
+
+    # Get audit status for the asset
+    audit_info = await _get_asset_audit_info(session, asset.id)
+
+    # Build warnings list
+    warnings: list[str] = []
+    if audit_info and not audit_info["is_passing"]:
+        warnings.append(
+            f"Data quality audit {audit_info['status']} with "
+            f"{audit_info['guarantees_failed']} failing guarantee(s). "
+            "Consider fixing audits before publishing."
+        )
 
     return {
         "proposal_id": str(proposal.id),
@@ -348,6 +413,8 @@ async def get_proposal_status(
         "proposed_by": {
             "team_id": str(proposal.proposed_by),
             "team_name": proposer.name if proposer else "Unknown",
+            "user_id": str(proposal.proposed_by_user_id) if proposal.proposed_by_user_id else None,
+            "user_name": proposer_user.name if proposer_user else None,
         },
         "proposed_at": proposal.proposed_at.isoformat(),
         "resolved_at": proposal.resolved_at.isoformat() if proposal.resolved_at else None,
@@ -359,6 +426,8 @@ async def get_proposal_status(
         },
         "acknowledgments": ack_list,
         "pending_consumers": pending_consumers,
+        "audit_status": audit_info,
+        "warnings": warnings,
     }
 
 
@@ -421,6 +490,7 @@ async def acknowledge_proposal(
     db_ack = AcknowledgmentDB(
         proposal_id=proposal_id,
         consumer_team_id=ack.consumer_team_id,
+        acknowledged_by_user_id=ack.acknowledged_by_user_id,
         response=ack.response,
         migration_deadline=ack.migration_deadline,
         notes=ack.notes,
@@ -714,6 +784,7 @@ async def publish_from_proposal(
             compatibility_mode=compat_mode,
             guarantees=current_contract.guarantees if current_contract else {},
             published_by=publish_request.published_by,
+            published_by_user_id=publish_request.published_by_user_id,
         )
         session.add(new_contract)
 
@@ -749,9 +820,18 @@ async def publish_from_proposal(
         from_proposal_id=proposal_id,
     )
 
-    return {
+    # Check audit status and add warning if failing
+    audit_info = await _get_asset_audit_info(session, proposal.asset_id)
+    response: dict[str, Any] = {
         "action": "published",
         "proposal_id": str(proposal_id),
         "contract": Contract.model_validate(new_contract).model_dump(),
         "deprecated_contract_id": str(current_contract.id) if current_contract else None,
     }
+    if audit_info and not audit_info["is_passing"]:
+        response["audit_warning"] = (
+            f"Warning: Most recent audit {audit_info['status']} "
+            f"with {audit_info['guarantees_failed']} guarantee(s) failing"
+        )
+
+    return response

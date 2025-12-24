@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,26 +17,29 @@ from tessera.api.errors import (
     ForbiddenError,
     NotFoundError,
 )
-from tessera.api.pagination import PaginationParams, paginate, pagination_params
+from tessera.api.pagination import PaginationParams, pagination_params
 from tessera.api.rate_limit import limit_read, limit_write
 from tessera.config import settings
 from tessera.db import (
     AssetDB,
+    AuditRunDB,
     ContractDB,
     ProposalDB,
     RegistrationDB,
     TeamDB,
+    UserDB,
     get_session,
 )
 from tessera.models import (
     Asset,
     AssetCreate,
     AssetUpdate,
+    BulkAssignRequest,
     Contract,
     ContractCreate,
     Proposal,
 )
-from tessera.models.enums import APIKeyScope, ContractStatus, RegistrationStatus
+from tessera.models.enums import APIKeyScope, AuditRunStatus, ContractStatus, RegistrationStatus
 from tessera.services import (
     check_compatibility,
     diff_schemas,
@@ -61,6 +64,26 @@ from tessera.services.slack import notify_proposal_created
 from tessera.services.webhooks import send_proposal_created
 
 router = APIRouter()
+
+
+def parse_semver(version: str) -> tuple[int, int, int]:
+    """Parse a semantic version string into (major, minor, patch)."""
+    # Strip any prerelease/build metadata
+    base = version.split("-")[0].split("+")[0]
+    parts = base.split(".")
+    return (int(parts[0]), int(parts[1]), int(parts[2]))
+
+
+def bump_version(current: str, bump_type: str) -> str:
+    """Bump a semantic version based on change type.
+
+    bump_type: 'major' or 'minor'
+    """
+    major, minor, patch = parse_semver(current)
+    if bump_type == "major":
+        return f"{major + 1}.0.0"
+    else:  # minor
+        return f"{major}.{minor + 1}.0"
 
 
 @router.post("", response_model=Asset, status_code=201)
@@ -88,6 +111,22 @@ async def create_asset(
     if not result.scalar_one_or_none():
         raise NotFoundError(ErrorCode.TEAM_NOT_FOUND, "Owner team not found")
 
+    # Validate owner user exists and belongs to owner team if provided
+    if asset.owner_user_id:
+        user_result = await session.execute(
+            select(UserDB)
+            .where(UserDB.id == asset.owner_user_id)
+            .where(UserDB.deactivated_at.is_(None))
+        )
+        user = user_result.scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=404, detail="Owner user not found")
+        if user.team_id != asset.owner_team_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Owner user must belong to the owner team",
+            )
+
     # Check for duplicate FQN
     existing = await session.execute(
         select(AssetDB)
@@ -104,6 +143,7 @@ async def create_asset(
     db_asset = AssetDB(
         fqn=asset.fqn,
         owner_team_id=asset.owner_team_id,
+        owner_user_id=asset.owner_user_id,
         environment=asset.environment,
         metadata_=asset.metadata,
     )
@@ -124,26 +164,115 @@ async def list_assets(
     request: Request,
     auth: Auth,
     owner: UUID | None = Query(None, description="Filter by owner team ID"),
+    owner_user: UUID | None = Query(None, description="Filter by owner user ID"),
+    unowned: bool = Query(False, description="Filter to assets without a user owner"),
     fqn: str | None = Query(None, description="Filter by FQN pattern (case-insensitive)"),
     environment: str | None = Query(None, description="Filter by environment"),
+    sort_by: str | None = Query(None, description="Sort by field (fqn, owner, created_at)"),
+    sort_order: str = Query("asc", description="Sort order (asc, desc)"),
     params: PaginationParams = Depends(pagination_params),
     _: None = RequireRead,
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
-    """List all assets with filtering and pagination.
+    """List all assets with filtering, sorting, and pagination.
 
-    Requires read scope.
+    Requires read scope. Returns assets with owner team/user names and active contract version.
+
+    Filters:
+    - owner: Filter by owner team ID
+    - owner_user: Filter by owner user ID
+    - unowned: If true, only return assets without a user owner
     """
-    query = select(AssetDB).where(AssetDB.deleted_at.is_(None))
+    # Query with joins to get team and user names
+    query = (
+        select(
+            AssetDB,
+            TeamDB.name.label("team_name"),
+            UserDB.name.label("user_name"),
+            UserDB.email.label("user_email"),
+        )
+        .outerjoin(TeamDB, AssetDB.owner_team_id == TeamDB.id)
+        .outerjoin(UserDB, AssetDB.owner_user_id == UserDB.id)
+        .where(AssetDB.deleted_at.is_(None))
+    )
+
+    # Build count query base
+    count_base = select(AssetDB).where(AssetDB.deleted_at.is_(None))
+
     if owner:
         query = query.where(AssetDB.owner_team_id == owner)
+        count_base = count_base.where(AssetDB.owner_team_id == owner)
+    if owner_user:
+        query = query.where(AssetDB.owner_user_id == owner_user)
+        count_base = count_base.where(AssetDB.owner_user_id == owner_user)
+    if unowned:
+        query = query.where(AssetDB.owner_user_id.is_(None))
+        count_base = count_base.where(AssetDB.owner_user_id.is_(None))
     if fqn:
         query = query.where(AssetDB.fqn.ilike(f"%{fqn}%"))
+        count_base = count_base.where(AssetDB.fqn.ilike(f"%{fqn}%"))
     if environment:
         query = query.where(AssetDB.environment == environment)
-    query = query.order_by(AssetDB.fqn)
+        count_base = count_base.where(AssetDB.environment == environment)
 
-    return await paginate(session, query, params, response_model=Asset)
+    # Apply sorting
+    sort_column: Any = AssetDB.fqn  # default
+    if sort_by == "owner":
+        sort_column = TeamDB.name
+    elif sort_by == "owner_user":
+        sort_column = UserDB.name
+    elif sort_by == "created_at":
+        sort_column = AssetDB.created_at
+    elif sort_by == "fqn":
+        sort_column = AssetDB.fqn
+
+    if sort_order == "desc":
+        query = query.order_by(sort_column.desc())
+    else:
+        query = query.order_by(sort_column.asc())
+
+    # Get total count
+    count_query = select(func.count()).select_from(count_base.subquery())
+    total_result = await session.execute(count_query)
+    total = total_result.scalar() or 0
+
+    paginated_query = query.limit(params.limit).offset(params.offset)
+    result = await session.execute(paginated_query)
+    rows = result.all()
+
+    # Collect asset IDs to batch fetch active contracts
+    asset_ids = [asset_db.id for asset_db, _, _, _ in rows]
+
+    # Batch fetch active contracts for all assets (fixes N+1)
+    active_contracts_map: dict[UUID, str] = {}
+    if asset_ids:
+        # Get all active contracts for these assets, ordered by published_at desc
+        contracts_result = await session.execute(
+            select(ContractDB.asset_id, ContractDB.version, ContractDB.published_at)
+            .where(ContractDB.asset_id.in_(asset_ids))
+            .where(ContractDB.status == ContractStatus.ACTIVE)
+            .order_by(ContractDB.published_at.desc())
+        )
+        # Keep only the most recent active contract per asset
+        for asset_id, version, _ in contracts_result.all():
+            if asset_id not in active_contracts_map:
+                active_contracts_map[asset_id] = version
+
+    results = []
+    for asset_db, team_name, user_name, user_email in rows:
+        asset_dict = Asset.model_validate(asset_db).model_dump()
+        asset_dict["owner_team_name"] = team_name
+        asset_dict["owner_user_name"] = user_name
+        asset_dict["owner_user_email"] = user_email
+        asset_dict["active_contract_version"] = active_contracts_map.get(asset_db.id)
+        results.append(asset_dict)
+
+    return {
+        "results": results,
+        "total": total,
+        "limit": params.limit,
+        "offset": params.offset,
+    }
 
 
 @router.get("/search")
@@ -237,7 +366,7 @@ async def search_assets(
     return response
 
 
-@router.get("/{asset_id}", response_model=Asset)
+@router.get("/{asset_id}")
 @limit_read
 async def get_asset(
     request: Request,
@@ -245,27 +374,43 @@ async def get_asset(
     auth: Auth,
     _: None = RequireRead,
     session: AsyncSession = Depends(get_session),
-) -> AssetDB | dict[str, Any]:
+) -> dict[str, Any]:
     """Get an asset by ID.
 
-    Requires read scope.
+    Requires read scope. Returns asset with owner team and user names.
     """
     # Try cache first
     cached = await get_cached_asset(str(asset_id))
     if cached:
         return cached
 
+    # Query with joins to get team and user names
     result = await session.execute(
-        select(AssetDB).where(AssetDB.id == asset_id).where(AssetDB.deleted_at.is_(None))
+        select(
+            AssetDB,
+            TeamDB.name.label("team_name"),
+            UserDB.name.label("user_name"),
+            UserDB.email.label("user_email"),
+        )
+        .outerjoin(TeamDB, AssetDB.owner_team_id == TeamDB.id)
+        .outerjoin(UserDB, AssetDB.owner_user_id == UserDB.id)
+        .where(AssetDB.id == asset_id)
+        .where(AssetDB.deleted_at.is_(None))
     )
-    asset = result.scalar_one_or_none()
-    if not asset:
+    row = result.one_or_none()
+    if not row:
         raise NotFoundError(ErrorCode.ASSET_NOT_FOUND, "Asset not found")
 
-    # Cache result
-    await cache_asset(str(asset_id), Asset.model_validate(asset).model_dump())
+    asset, team_name, user_name, user_email = row
+    asset_dict = Asset.model_validate(asset).model_dump()
+    asset_dict["owner_team_name"] = team_name
+    asset_dict["owner_user_name"] = user_name
+    asset_dict["owner_user_email"] = user_email
 
-    return asset
+    # Cache result
+    await cache_asset(str(asset_id), asset_dict)
+
+    return asset_dict
 
 
 @router.patch("/{asset_id}", response_model=Asset)
@@ -298,12 +443,33 @@ async def update_asset(
 
     if update.fqn is not None:
         asset.fqn = update.fqn
-    if update.owner_team_id is not None:
-        asset.owner_team_id = update.owner_team_id
     if update.environment is not None:
         asset.environment = update.environment
     if update.metadata is not None:
         asset.metadata_ = update.metadata
+
+    # Handle owner_team_id and owner_user_id together for validation
+    new_team_id = update.owner_team_id if update.owner_team_id is not None else asset.owner_team_id
+    new_user_id = update.owner_user_id if update.owner_user_id is not None else asset.owner_user_id
+
+    # If user is being set/changed, validate they belong to the (new) team
+    if new_user_id is not None:
+        user_result = await session.execute(
+            select(UserDB).where(UserDB.id == new_user_id).where(UserDB.deactivated_at.is_(None))
+        )
+        user = user_result.scalar_one_or_none()
+        if not user:
+            raise HTTPException(status_code=404, detail="Owner user not found")
+        if user.team_id != new_team_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Owner user must belong to the owner team",
+            )
+
+    if update.owner_team_id is not None:
+        asset.owner_team_id = update.owner_team_id
+    if update.owner_user_id is not None:
+        asset.owner_user_id = update.owner_user_id
 
     await session.flush()
     await session.refresh(asset)
@@ -379,6 +545,27 @@ async def restore_asset(
     return asset
 
 
+async def _get_last_audit_status(
+    session: AsyncSession, asset_id: UUID
+) -> tuple[AuditRunStatus | None, int, datetime | None]:
+    """Get the most recent audit run status for an asset.
+
+    Returns (status, failed_count, run_at) or (None, 0, None) if no audits exist.
+    """
+    from sqlalchemy import desc
+
+    result = await session.execute(
+        select(AuditRunDB)
+        .where(AuditRunDB.asset_id == asset_id)
+        .order_by(desc(AuditRunDB.run_at))
+        .limit(1)
+    )
+    audit_run = result.scalar_one_or_none()
+    if not audit_run:
+        return None, 0, None
+    return audit_run.status, audit_run.guarantees_failed, audit_run.run_at
+
+
 @router.post("/{asset_id}/contracts", status_code=201)
 @limit_write
 async def create_contract(
@@ -387,7 +574,11 @@ async def create_contract(
     asset_id: UUID,
     contract: ContractCreate,
     published_by: UUID = Query(..., description="Team ID of the publisher"),
+    published_by_user_id: UUID | None = Query(None, description="User ID who published"),
     force: bool = Query(False, description="Force publish even if breaking (creates audit trail)"),
+    require_audit_pass: bool = Query(
+        False, description="Require most recent audit to pass before publishing"
+    ),
     _: None = RequireWrite,
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
@@ -400,6 +591,12 @@ async def create_contract(
     - If change is compatible: auto-publish, deprecate old contract
     - If change is breaking: create a Proposal for consumer acknowledgment
     - If force=True: publish anyway but log the override
+    - If require_audit_pass=True: reject if most recent audit failed
+
+    WAP (Write-Audit-Publish) enforcement:
+    - Set require_audit_pass=True to gate publishing on passing audits
+    - Returns 412 Precondition Failed if no audits exist or last audit failed
+    - Without this flag, audit failures add a warning to the response
 
     Returns either a Contract (if published) or a Proposal (if breaking).
     """
@@ -408,6 +605,43 @@ async def create_contract(
     asset = asset_result.scalar_one_or_none()
     if not asset:
         raise NotFoundError(ErrorCode.ASSET_NOT_FOUND, "Asset not found")
+
+    # Check audit status for WAP enforcement
+    audit_status, audit_failed, audit_run_at = await _get_last_audit_status(session, asset_id)
+    audit_warning: str | None = None
+
+    if require_audit_pass:
+        if audit_status is None:
+            raise HTTPException(
+                status_code=412,
+                detail={
+                    "code": "AUDIT_REQUIRED",
+                    "message": (
+                        "No audit runs found. Run audits before publishing "
+                        "with require_audit_pass=True."
+                    ),
+                },
+            )
+        if audit_status != AuditRunStatus.PASSED:
+            raise HTTPException(
+                status_code=412,
+                detail={
+                    "code": "AUDIT_FAILED",
+                    "message": (
+                        f"Most recent audit {audit_status.value}. "
+                        "Cannot publish with require_audit_pass=True."
+                    ),
+                    "audit_status": audit_status.value,
+                    "guarantees_failed": audit_failed,
+                    "audit_run_at": audit_run_at.isoformat() if audit_run_at else None,
+                },
+            )
+    elif audit_status and audit_status != AuditRunStatus.PASSED:
+        # Not enforcing, but add a warning to the response
+        audit_warning = (
+            f"Warning: Most recent audit {audit_status.value} "
+            f"with {audit_failed} guarantee(s) failing"
+        )
 
     # Resource-level auth: must own the asset's team or be admin
     if asset.owner_team_id != auth.team_id and not auth.has_scope(APIKeyScope.ADMIN):
@@ -438,7 +672,7 @@ async def create_contract(
             details={"errors": errors},
         )
 
-    # Get current active contract
+    # Get current active contract first (needed for version auto-generation)
     contract_result = await session.execute(
         select(ContractDB)
         .where(ContractDB.asset_id == asset_id)
@@ -448,17 +682,54 @@ async def create_contract(
     )
     current_contract = contract_result.scalar_one_or_none()
 
+    # Auto-generate version if not provided
+    version_auto_generated = False
+    if contract.version is None:
+        version_auto_generated = True
+        if not current_contract:
+            # First contract for this asset
+            version = "1.0.0"
+        else:
+            # Determine bump type based on compatibility
+            is_compatible, _unused = check_compatibility(
+                current_contract.schema_def,
+                contract.schema_def,
+                current_contract.compatibility_mode,
+            )
+            bump_type = "minor" if is_compatible else "major"
+            version = bump_version(current_contract.version, bump_type)
+    else:
+        version = contract.version
+
+    # Check if version already exists for this asset
+    existing_version_result = await session.execute(
+        select(ContractDB)
+        .where(ContractDB.asset_id == asset_id)
+        .where(ContractDB.version == version)
+    )
+    existing_version = existing_version_result.scalar_one_or_none()
+    if existing_version:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "VERSION_EXISTS",
+                "message": f"Contract version {version} already exists for this asset",
+                "existing_contract_id": str(existing_version.id),
+            },
+        )
+
     # Helper to create and return the new contract
     # Uses nested transaction (savepoint) to ensure atomicity of multi-step publish
     async def publish_contract() -> ContractDB:
         async with session.begin_nested():
             db_contract = ContractDB(
                 asset_id=asset_id,
-                version=contract.version,
+                version=version,
                 schema_def=contract.schema_def,
                 compatibility_mode=contract.compatibility_mode,
                 guarantees=contract.guarantees.model_dump() if contract.guarantees else None,
                 published_by=published_by,
+                published_by_user_id=published_by_user_id,
             )
             session.add(db_contract)
 
@@ -483,10 +754,15 @@ async def create_contract(
         await invalidate_asset(str(asset_id))
         contract_data = Contract.model_validate(new_contract).model_dump()
         await cache_contract(str(new_contract.id), contract_data)
-        return {
+        response: dict[str, Any] = {
             "action": "published",
             "contract": contract_data,
         }
+        if version_auto_generated:
+            response["version_auto_generated"] = True
+        if audit_warning:
+            response["audit_warning"] = audit_warning
+        return response
 
     # Diff schemas and check compatibility
     is_compatible, breaking_changes = check_compatibility(
@@ -510,11 +786,16 @@ async def create_contract(
         await invalidate_asset(str(asset_id))
         contract_data = Contract.model_validate(new_contract).model_dump()
         await cache_contract(str(new_contract.id), contract_data)
-        return {
+        response = {
             "action": "published",
             "change_type": str(diff_result.change_type),
             "contract": contract_data,
         }
+        if version_auto_generated:
+            response["version_auto_generated"] = True
+        if audit_warning:
+            response["audit_warning"] = audit_warning
+        return response
 
     # Breaking change with force flag = publish anyway (logged)
     if force:
@@ -531,13 +812,18 @@ async def create_contract(
         await invalidate_asset(str(asset_id))
         contract_data = Contract.model_validate(new_contract).model_dump()
         await cache_contract(str(new_contract.id), contract_data)
-        return {
+        response = {
             "action": "force_published",
             "change_type": str(diff_result.change_type),
             "breaking_changes": [bc.to_dict() for bc in breaking_changes],
             "contract": contract_data,
             "warning": "Breaking change was force-published. Consumers may be affected.",
         }
+        if version_auto_generated:
+            response["version_auto_generated"] = True
+        if audit_warning:
+            response["audit_warning"] = audit_warning
+        return response
 
     # Breaking change without force = create proposal
     db_proposal = ProposalDB(
@@ -546,6 +832,7 @@ async def create_contract(
         change_type=diff_result.change_type,
         breaking_changes=[bc.to_dict() for bc in breaking_changes],
         proposed_by=published_by,
+        proposed_by_user_id=published_by_user_id,
     )
     session.add(db_proposal)
     await session.flush()
@@ -585,7 +872,7 @@ async def create_contract(
         asset_fqn=asset.fqn,
         producer_team_id=publisher_team.id,
         producer_team_name=publisher_team.name,
-        proposed_version=contract.version,
+        proposed_version=version,
         breaking_changes=[bc.to_dict() for bc in breaking_changes],
         impacted_consumers=impacted_consumers,
     )
@@ -593,7 +880,7 @@ async def create_contract(
     # Send Slack notification
     await notify_proposal_created(
         asset_fqn=asset.fqn,
-        version=contract.version,
+        version=version,
         producer_team=publisher_team.name,
         affected_consumers=[c["team_name"] for c in impacted_consumers],
         breaking_changes=[bc.to_dict() for bc in breaking_changes],
@@ -620,7 +907,7 @@ async def list_asset_contracts(
 ) -> dict[str, Any]:
     """List all contracts for an asset.
 
-    Requires read scope.
+    Requires read scope. Returns contracts with publisher team and user names.
     """
     # Try cache first (only for default pagination to keep cache simple)
     if params.limit == settings.pagination_limit_default and params.offset == 0:
@@ -628,18 +915,50 @@ async def list_asset_contracts(
         if cached:
             return cached
 
+    # Query with join to get publisher team and user names
     query = (
-        select(ContractDB)
+        select(
+            ContractDB,
+            TeamDB.name.label("publisher_team_name"),
+            UserDB.name.label("publisher_user_name"),
+        )
+        .outerjoin(TeamDB, ContractDB.published_by == TeamDB.id)
+        .outerjoin(UserDB, ContractDB.published_by_user_id == UserDB.id)
         .where(ContractDB.asset_id == asset_id)
         .order_by(ContractDB.published_at.desc())
     )
-    result = await paginate(session, query, params, response_model=Contract)
+
+    # Get total count
+    count_query = select(func.count()).select_from(
+        select(ContractDB).where(ContractDB.asset_id == asset_id).subquery()
+    )
+    total_result = await session.execute(count_query)
+    total = total_result.scalar() or 0
+
+    # Paginate
+    paginated_query = query.limit(params.limit).offset(params.offset)
+    result = await session.execute(paginated_query)
+    rows = result.all()
+
+    results = []
+    for contract_db, publisher_team_name, publisher_user_name in rows:
+        contract_dict = Contract.model_validate(contract_db).model_dump()
+        contract_dict["published_by_team_name"] = publisher_team_name
+        contract_dict["published_by_user_name"] = publisher_user_name
+        results.append(contract_dict)
+
+    response = {
+        "results": results,
+        "total": total,
+        "limit": params.limit,
+        "offset": params.offset,
+    }
 
     # Cache result if default pagination
     if params.limit == settings.pagination_limit_default and params.offset == 0:
-        await cache_asset_contracts_list(str(asset_id), result)
+        await cache_asset_contracts_list(str(asset_id), response)
 
-    return result
+    return response
 
 
 @router.get("/{asset_id}/contracts/history")
@@ -784,4 +1103,60 @@ async def diff_contract_versions(
         "breaking_changes": [bc.to_dict() for bc in breaking],
         "all_changes": diff_result_data["all_changes"],
         "compatibility_mode": str(from_contract.compatibility_mode.value),
+    }
+
+
+@router.post("/bulk-assign")
+@limit_write
+async def bulk_assign_owner(
+    request: Request,
+    bulk_request: BulkAssignRequest,
+    auth: Auth,
+    _: None = RequireAdmin,
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """Bulk assign or unassign a user owner for multiple assets.
+
+    Requires admin scope.
+
+    Set owner_user_id to null to unassign user ownership from assets.
+    """
+    # Validate user exists if assigning
+    if bulk_request.owner_user_id:
+        user_result = await session.execute(
+            select(UserDB)
+            .where(UserDB.id == bulk_request.owner_user_id)
+            .where(UserDB.deactivated_at.is_(None))
+        )
+        if not user_result.scalar_one_or_none():
+            raise HTTPException(status_code=404, detail="Owner user not found")
+
+    # Get all assets
+    result = await session.execute(
+        select(AssetDB)
+        .where(AssetDB.id.in_(bulk_request.asset_ids))
+        .where(AssetDB.deleted_at.is_(None))
+    )
+    assets = list(result.scalars().all())
+
+    # Track which were found and updated
+    found_ids = {a.id for a in assets}
+    not_found = [str(aid) for aid in bulk_request.asset_ids if aid not in found_ids]
+
+    # Update all found assets
+    updated = 0
+    for asset in assets:
+        asset.owner_user_id = bulk_request.owner_user_id
+        updated += 1
+
+    await session.flush()
+
+    # Invalidate caches for all updated assets
+    for asset in assets:
+        await invalidate_asset(str(asset.id))
+
+    return {
+        "updated": updated,
+        "not_found": not_found,
+        "owner_user_id": str(bulk_request.owner_user_id) if bulk_request.owner_user_id else None,
     }

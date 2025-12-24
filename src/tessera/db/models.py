@@ -19,12 +19,15 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 from tessera.models.enums import (
     AcknowledgmentResponseType,
+    AuditRunStatus,
     ChangeType,
     CompatibilityMode,
     ContractStatus,
     DependencyType,
+    GuaranteeMode,
     ProposalStatus,
     RegistrationStatus,
+    UserRole,
     WebhookDeliveryStatus,
 )
 
@@ -40,8 +43,35 @@ class Base(DeclarativeBase):
     pass
 
 
+class UserDB(Base):
+    """User database model - individual people who own assets."""
+
+    __tablename__ = "users"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), default=UserRole.USER, nullable=False)
+    team_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("teams.id"), nullable=True, index=True
+    )
+    metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
+    notification_preferences: Mapped[dict[str, Any]] = mapped_column(
+        JSON, default=dict, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    deactivated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+
+    # Relationships
+    team: Mapped["TeamDB | None"] = relationship(back_populates="members")
+    owned_assets: Mapped[list["AssetDB"]] = relationship(back_populates="owner_user")
+
+
 class TeamDB(Base):
-    """Team database model."""
+    """Team database model - groups of users for backup notifications."""
 
     __tablename__ = "teams"
 
@@ -54,6 +84,7 @@ class TeamDB(Base):
     )
 
     # Relationships
+    members: Mapped[list["UserDB"]] = relationship(back_populates="team")
     assets: Mapped[list["AssetDB"]] = relationship(back_populates="owner_team")
 
 
@@ -65,8 +96,14 @@ class AssetDB(Base):
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     fqn: Mapped[str] = mapped_column(String(1000), nullable=False)
     owner_team_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("teams.id"), nullable=False)
+    owner_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id"), nullable=True, index=True
+    )
     environment: Mapped[str] = mapped_column(
         String(50), nullable=False, default="production", index=True
+    )
+    guarantee_mode: Mapped[GuaranteeMode] = mapped_column(
+        Enum(GuaranteeMode), default=GuaranteeMode.NOTIFY
     )
     metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
@@ -78,6 +115,7 @@ class AssetDB(Base):
 
     # Relationships
     owner_team: Mapped["TeamDB"] = relationship(back_populates="assets")
+    owner_user: Mapped["UserDB | None"] = relationship(back_populates="owned_assets")
     contracts: Mapped[list["ContractDB"]] = relationship(back_populates="asset")
     proposals: Mapped[list["ProposalDB"]] = relationship(back_populates="asset")
 
@@ -103,11 +141,15 @@ class ContractDB(Base):
     published_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, index=True
     )
-    published_by: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    published_by: Mapped[UUID] = mapped_column(Uuid, nullable=False)  # Team ID
+    published_by_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id"), nullable=True, index=True
+    )  # Individual who published
 
     # Relationships
     asset: Mapped["AssetDB"] = relationship(back_populates="contracts")
     registrations: Mapped[list["RegistrationDB"]] = relationship(back_populates="contract")
+    published_by_user: Mapped["UserDB | None"] = relationship()
 
 
 class RegistrationDB(Base):
@@ -145,12 +187,17 @@ class ProposalDB(Base):
         Uuid, ForeignKey("assets.id"), nullable=False, index=True
     )
     proposed_schema: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    proposed_guarantees: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     change_type: Mapped[ChangeType] = mapped_column(Enum(ChangeType), nullable=False)
     breaking_changes: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    guarantee_changes: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
     status: Mapped[ProposalStatus] = mapped_column(
         Enum(ProposalStatus), default=ProposalStatus.PENDING, index=True
     )
-    proposed_by: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    proposed_by: Mapped[UUID] = mapped_column(Uuid, nullable=False)  # Team ID
+    proposed_by_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id"), nullable=True, index=True
+    )  # Individual who proposed
     proposed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, index=True
     )
@@ -159,6 +206,7 @@ class ProposalDB(Base):
     # Relationships
     asset: Mapped["AssetDB"] = relationship(back_populates="proposals")
     acknowledgments: Mapped[list["AcknowledgmentDB"]] = relationship(back_populates="proposal")
+    proposed_by_user: Mapped["UserDB | None"] = relationship()
 
 
 class AcknowledgmentDB(Base):
@@ -173,6 +221,9 @@ class AcknowledgmentDB(Base):
     consumer_team_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("teams.id"), nullable=False, index=True
     )
+    acknowledged_by_user_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id"), nullable=True, index=True
+    )  # Individual who acknowledged
     response: Mapped[AcknowledgmentResponseType] = mapped_column(
         Enum(AcknowledgmentResponseType), nullable=False
     )
@@ -184,6 +235,7 @@ class AcknowledgmentDB(Base):
 
     # Relationships
     proposal: Mapped["ProposalDB"] = relationship(back_populates="acknowledgments")
+    acknowledged_by_user: Mapped["UserDB | None"] = relationship()
 
 
 class AssetDependencyDB(Base):
@@ -262,3 +314,39 @@ class WebhookDeliveryDB(Base):
         DateTime(timezone=True), default=_utcnow, index=True
     )
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class AuditRunDB(Base):
+    """Audit run tracking for WAP (Write-Audit-Publish) integration.
+
+    Records the results of data quality checks (dbt tests, Great Expectations, etc.)
+    against contract guarantees. Enables runtime enforcement tracking.
+    """
+
+    __tablename__ = "audit_runs"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    asset_id: Mapped[UUID] = mapped_column(
+        Uuid, ForeignKey("assets.id"), nullable=False, index=True
+    )
+    contract_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("contracts.id"), nullable=True, index=True
+    )
+    status: Mapped[AuditRunStatus] = mapped_column(Enum(AuditRunStatus), nullable=False, index=True)
+    guarantees_checked: Mapped[int] = mapped_column(Integer, default=0)
+    guarantees_passed: Mapped[int] = mapped_column(Integer, default=0)
+    guarantees_failed: Mapped[int] = mapped_column(Integer, default=0)
+    triggered_by: Mapped[str] = mapped_column(
+        String(50), nullable=False, index=True
+    )  # "dbt_test", "great_expectations", "soda", "manual"
+    run_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, index=True
+    )  # External run ID for correlation (e.g., dbt invocation_id)
+    details: Mapped[dict[str, Any]] = mapped_column(
+        JSON, default=dict
+    )  # Failed test details, error messages
+    run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
+
+    # Relationships
+    asset: Mapped["AssetDB"] = relationship()
+    contract: Mapped["ContractDB | None"] = relationship()

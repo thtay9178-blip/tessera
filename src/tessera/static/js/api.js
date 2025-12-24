@@ -45,6 +45,36 @@ class TesseraAPI {
     }
   }
 
+  // Users
+  async listUsers(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/users${query ? `?${query}` : ''}`);
+  }
+
+  async getUser(id) {
+    return this.request(`/users/${id}`);
+  }
+
+  async createUser(data) {
+    return this.request('/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateUser(id, data) {
+    return this.request(`/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUser(id) {
+    return this.request(`/users/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Teams
   async listTeams(params = {}) {
     const query = new URLSearchParams(params).toString();
@@ -75,6 +105,25 @@ class TesseraAPI {
     });
   }
 
+  async getTeamMembers(teamId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/teams/${teamId}/members${query ? `?${query}` : ''}`);
+  }
+
+  async reassignTeamAssets(teamId, targetTeamId, assetIds = null) {
+    const body = { target_team_id: targetTeamId };
+    if (assetIds) body.asset_ids = assetIds;
+    return this.request(`/teams/${teamId}/reassign-assets`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+
+  async getTeamAssets(teamId, params = {}) {
+    const query = new URLSearchParams({ ...params, owner_team_id: teamId }).toString();
+    return this.request(`/assets?${query}`);
+  }
+
   // Assets
   async listAssets(params = {}) {
     const query = new URLSearchParams(params).toString();
@@ -102,6 +151,16 @@ class TesseraAPI {
   async deleteAsset(id) {
     return this.request(`/assets/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  async bulkAssignAssets(assetIds, ownerUserId) {
+    return this.request('/assets/bulk-assign', {
+      method: 'POST',
+      body: JSON.stringify({
+        asset_ids: assetIds,
+        owner_user_id: ownerUserId,
+      }),
     });
   }
 
@@ -159,9 +218,15 @@ class TesseraAPI {
     return this.request(`/proposals/${id}/status`);
   }
 
-  async acknowledgeProposal(id, teamId) {
-    return this.request(`/proposals/${id}/acknowledge?team_id=${teamId}`, {
+  async acknowledgeProposal(id, consumerTeamId, response = 'approved', notes = null) {
+    const body = {
+      consumer_team_id: consumerTeamId,
+      response: response,
+    };
+    if (notes) body.notes = notes;
+    return this.request(`/proposals/${id}/acknowledge`, {
       method: 'POST',
+      body: JSON.stringify(body),
     });
   }
 
@@ -175,6 +240,18 @@ class TesseraAPI {
     return this.request(`/proposals/${id}/withdraw`, {
       method: 'POST',
     });
+  }
+
+  async publishFromProposal(proposalId, version, publishedBy) {
+    return this.request(`/proposals/${proposalId}/publish`, {
+      method: 'POST',
+      body: JSON.stringify({ version, published_by: publishedBy }),
+    });
+  }
+
+  // Registrations for a specific contract (includes team names)
+  async getContractRegistrations(contractId) {
+    return this.request(`/contracts/${contractId}/registrations`);
   }
 
   // Dependencies
@@ -204,6 +281,33 @@ class TesseraAPI {
 
   async healthReady() {
     return this.request('/health/ready');
+  }
+
+  // Sync / Import
+  async uploadDbtManifest(manifest, ownerTeamId, conflictMode = 'ignore') {
+    return this.request('/sync/dbt/upload', {
+      method: 'POST',
+      body: JSON.stringify({
+        manifest: manifest,
+        owner_team_id: ownerTeamId,
+        conflict_mode: conflictMode,
+      }),
+    });
+  }
+
+  // Audit Events (admin-only)
+  async listAuditEvents(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/audit/events${query ? `?${query}` : ''}`);
+  }
+
+  async getAuditEvent(id) {
+    return this.request(`/audit/events/${id}`);
+  }
+
+  async getEntityAuditHistory(entityType, entityId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/audit/entities/${entityType}/${entityId}/history${query ? `?${query}` : ''}`);
   }
 }
 
@@ -248,6 +352,17 @@ function showError(message) {
   const container = document.getElementById('error-container');
   if (container) {
     container.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+    container.style.display = 'block';
+    setTimeout(() => {
+      container.style.display = 'none';
+    }, 5000);
+  }
+}
+
+function showSuccess(message) {
+  const container = document.getElementById('error-container');
+  if (container) {
+    container.innerHTML = `<div class="success" style="background: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 1rem; border-radius: 4px;">${escapeHtml(message)}</div>`;
     container.style.display = 'block';
     setTimeout(() => {
       container.style.display = 'none';

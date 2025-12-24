@@ -1,6 +1,8 @@
-# Tessera
+<p align="center">
+  <img src="assets/logo.png" alt="Tessera" width="300">
+</p>
 
-Data contract coordination for warehouses.
+<h3 align="center">Data contract coordination for warehouses</h3>
 
 ## The Problem
 
@@ -95,6 +97,58 @@ All endpoints under `/api/v1`. Interactive docs at `/docs`.
 | Admin | API keys, webhooks, audit trail |
 
 Full reference: [docs/api.md](docs/api.md)
+
+## dbt Integration
+
+Tessera extracts contract guarantees directly from dbt tests:
+
+| dbt Test | Tessera Guarantee |
+|----------|-------------------|
+| `not_null` | `nullability: {column: "never"}` |
+| `accepted_values` | `accepted_values: {column: [...]}` |
+| `unique` | `custom: {type: "unique", ...}` |
+| `relationships` | `custom: {type: "relationships", ...}` |
+| `dbt_expectations.*` | `custom: {type: "test_name", ...}` |
+| Singular tests (SQL) | `custom: {type: "singular", sql: "..."}` |
+
+**Singular tests** are SQL files in your `tests/` directory that express business logic assertions. Tessera captures these as contract guarantees — removing them is a breaking change.
+
+```sql
+-- tests/assert_revenue_positive.sql
+SELECT revenue_id, amount
+FROM {{ ref('fct_revenue') }}
+WHERE status = 'completed' AND amount <= 0
+```
+
+### WAP (Write-Audit-Publish) Integration
+
+Tessera tracks data quality audit results for visibility into runtime enforcement:
+
+```yaml
+# dbt_project.yml
+on-run-end:
+  - "python scripts/report_to_tessera.py"
+```
+
+The script parses `target/run_results.json` and reports to Tessera:
+
+```bash
+# Environment setup
+export TESSERA_URL=http://localhost:8000
+export TESSERA_API_KEY=your-api-key
+
+# After dbt test
+python scripts/report_to_tessera.py
+```
+
+Query audit history and trends via API:
+```bash
+# Get audit history (paginated)
+curl $TESSERA_URL/api/v1/assets/{asset_id}/audit-history
+
+# Get trends and alerts (failure rates, patterns, alerts)
+curl $TESSERA_URL/api/v1/assets/{asset_id}/audit-trends?days=30
+```
 
 ## Deployment
 

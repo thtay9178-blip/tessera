@@ -1,13 +1,11 @@
 """Tests for /api/v1/sync endpoints (push, pull, dbt, dbt/impact)."""
 
 import json
-import tempfile
 from pathlib import Path
 
 import pytest
 import yaml
 from httpx import AsyncClient
-
 
 pytestmark = pytest.mark.asyncio
 
@@ -673,3 +671,497 @@ class TestDbtImpact:
         data = resp.json()
         assert data["status"] == "success"
         assert data["breaking_changes_count"] == 0
+
+
+class TestDbtGuaranteesExtraction:
+    """Tests for extracting guarantees from dbt tests during sync."""
+
+    async def test_dbt_sync_extracts_not_null_tests(self, client: AsyncClient, tmp_path: Path):
+        """Sync should extract not_null tests as nullability guarantees."""
+        team_resp = await client.post("/api/v1/teams", json={"name": "guarantees-team-1"})
+        team_id = team_resp.json()["id"]
+
+        manifest = {
+            "nodes": {
+                "model.project.orders": {
+                    "resource_type": "model",
+                    "database": "analytics",
+                    "schema": "public",
+                    "name": "orders_with_tests",
+                    "description": "Orders model",
+                    "tags": [],
+                    "columns": {
+                        "id": {"data_type": "integer"},
+                        "customer_id": {"data_type": "integer"},
+                        "status": {"data_type": "varchar"},
+                    },
+                },
+                "test.project.not_null_orders_id": {
+                    "resource_type": "test",
+                    "depends_on": {"nodes": ["model.project.orders"]},
+                    "test_metadata": {
+                        "name": "not_null",
+                        "kwargs": {"column_name": "id"},
+                    },
+                },
+                "test.project.not_null_orders_customer_id": {
+                    "resource_type": "test",
+                    "depends_on": {"nodes": ["model.project.orders"]},
+                    "test_metadata": {
+                        "name": "not_null",
+                        "kwargs": {"column_name": "customer_id"},
+                    },
+                },
+            },
+            "sources": {},
+        }
+        manifest_file = tmp_path / "manifest.json"
+        manifest_file.write_text(json.dumps(manifest))
+
+        resp = await client.post(
+            f"/api/v1/sync/dbt?manifest_path={manifest_file}&owner_team_id={team_id}"
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["guarantees_extracted"] == 1
+
+        # Verify asset has guarantees in metadata
+        assets_resp = await client.get(f"/api/v1/assets?owner={team_id}")
+        assets = assets_resp.json()["results"]
+        asset = next(a for a in assets if "orders_with_tests" in a["fqn"])
+        asset_detail = await client.get(f"/api/v1/assets/{asset['id']}")
+        metadata = asset_detail.json().get("metadata", {})
+
+        assert "guarantees" in metadata
+        assert "nullability" in metadata["guarantees"]
+        assert metadata["guarantees"]["nullability"]["id"] == "never"
+        assert metadata["guarantees"]["nullability"]["customer_id"] == "never"
+
+    async def test_dbt_sync_extracts_accepted_values_tests(
+        self, client: AsyncClient, tmp_path: Path
+    ):
+        """Sync should extract accepted_values tests as guarantees."""
+        team_resp = await client.post("/api/v1/teams", json={"name": "guarantees-team-2"})
+        team_id = team_resp.json()["id"]
+
+        manifest = {
+            "nodes": {
+                "model.project.users": {
+                    "resource_type": "model",
+                    "database": "analytics",
+                    "schema": "public",
+                    "name": "users_with_values",
+                    "description": "Users model",
+                    "tags": [],
+                    "columns": {
+                        "id": {"data_type": "integer"},
+                        "status": {"data_type": "varchar"},
+                    },
+                },
+                "test.project.accepted_values_users_status": {
+                    "resource_type": "test",
+                    "depends_on": {"nodes": ["model.project.users"]},
+                    "test_metadata": {
+                        "name": "accepted_values",
+                        "kwargs": {
+                            "column_name": "status",
+                            "values": ["active", "inactive", "pending"],
+                        },
+                    },
+                },
+            },
+            "sources": {},
+        }
+        manifest_file = tmp_path / "manifest.json"
+        manifest_file.write_text(json.dumps(manifest))
+
+        resp = await client.post(
+            f"/api/v1/sync/dbt?manifest_path={manifest_file}&owner_team_id={team_id}"
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["guarantees_extracted"] == 1
+
+        # Verify asset has accepted_values guarantees
+        assets_resp = await client.get(f"/api/v1/assets?owner={team_id}")
+        assets = assets_resp.json()["results"]
+        asset = next(a for a in assets if "users_with_values" in a["fqn"])
+        asset_detail = await client.get(f"/api/v1/assets/{asset['id']}")
+        metadata = asset_detail.json().get("metadata", {})
+
+        assert "guarantees" in metadata
+        assert "accepted_values" in metadata["guarantees"]
+        assert metadata["guarantees"]["accepted_values"]["status"] == [
+            "active",
+            "inactive",
+            "pending",
+        ]
+
+    async def test_dbt_sync_extracts_custom_tests(self, client: AsyncClient, tmp_path: Path):
+        """Sync should extract unique and relationship tests as custom guarantees."""
+        team_resp = await client.post("/api/v1/teams", json={"name": "guarantees-team-3"})
+        team_id = team_resp.json()["id"]
+
+        manifest = {
+            "nodes": {
+                "model.project.products": {
+                    "resource_type": "model",
+                    "database": "analytics",
+                    "schema": "public",
+                    "name": "products_custom",
+                    "description": "Products model",
+                    "tags": [],
+                    "columns": {
+                        "id": {"data_type": "integer"},
+                        "sku": {"data_type": "varchar"},
+                    },
+                },
+                "test.project.unique_products_sku": {
+                    "resource_type": "test",
+                    "depends_on": {"nodes": ["model.project.products"]},
+                    "test_metadata": {
+                        "name": "unique",
+                        "kwargs": {"column_name": "sku"},
+                    },
+                },
+            },
+            "sources": {},
+        }
+        manifest_file = tmp_path / "manifest.json"
+        manifest_file.write_text(json.dumps(manifest))
+
+        resp = await client.post(
+            f"/api/v1/sync/dbt?manifest_path={manifest_file}&owner_team_id={team_id}"
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["guarantees_extracted"] == 1
+
+        # Verify asset has custom guarantees
+        assets_resp = await client.get(f"/api/v1/assets?owner={team_id}")
+        assets = assets_resp.json()["results"]
+        asset = next(a for a in assets if "products_custom" in a["fqn"])
+        asset_detail = await client.get(f"/api/v1/assets/{asset['id']}")
+        metadata = asset_detail.json().get("metadata", {})
+
+        assert "guarantees" in metadata
+        assert "custom" in metadata["guarantees"]
+        assert len(metadata["guarantees"]["custom"]) == 1
+        assert metadata["guarantees"]["custom"][0]["type"] == "unique"
+        assert metadata["guarantees"]["custom"][0]["column"] == "sku"
+
+    async def test_dbt_sync_no_tests_no_guarantees(self, client: AsyncClient, tmp_path: Path):
+        """Sync should not add guarantees if no tests are defined."""
+        team_resp = await client.post("/api/v1/teams", json={"name": "guarantees-team-4"})
+        team_id = team_resp.json()["id"]
+
+        manifest = {
+            "nodes": {
+                "model.project.simple": {
+                    "resource_type": "model",
+                    "database": "analytics",
+                    "schema": "public",
+                    "name": "simple_model",
+                    "description": "Simple model without tests",
+                    "tags": [],
+                    "columns": {"id": {"data_type": "integer"}},
+                },
+            },
+            "sources": {},
+        }
+        manifest_file = tmp_path / "manifest.json"
+        manifest_file.write_text(json.dumps(manifest))
+
+        resp = await client.post(
+            f"/api/v1/sync/dbt?manifest_path={manifest_file}&owner_team_id={team_id}"
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["guarantees_extracted"] == 0
+
+        # Verify asset has no guarantees in metadata
+        assets_resp = await client.get(f"/api/v1/assets?owner={team_id}")
+        assets = assets_resp.json()["results"]
+        asset = next(a for a in assets if "simple_model" in a["fqn"])
+        asset_detail = await client.get(f"/api/v1/assets/{asset['id']}")
+        metadata = asset_detail.json().get("metadata", {})
+
+        assert "guarantees" not in metadata
+
+    async def test_dbt_sync_extracts_singular_tests(self, client: AsyncClient, tmp_path: Path):
+        """Sync should extract singular tests (SQL files) as custom guarantees.
+
+        Singular tests express custom business logic assertions like
+        'market_value must equal shares * price * multiplier'.
+        """
+        team_resp = await client.post("/api/v1/teams", json={"name": "guarantees-team-5"})
+        team_id = team_resp.json()["id"]
+
+        manifest = {
+            "nodes": {
+                "model.project.positions": {
+                    "resource_type": "model",
+                    "database": "analytics",
+                    "schema": "public",
+                    "name": "positions_singular",
+                    "description": "Positions model",
+                    "tags": [],
+                    "columns": {
+                        "id": {"data_type": "integer"},
+                        "shares": {"data_type": "numeric"},
+                        "price": {"data_type": "numeric"},
+                        "market_value": {"data_type": "numeric"},
+                    },
+                },
+                # Singular test - SQL file in tests/ directory, no test_metadata
+                "test.project.assert_market_value_consistency": {
+                    "resource_type": "test",
+                    "depends_on": {"nodes": ["model.project.positions"]},
+                    "description": "Validates market_value = shares * price",
+                    "raw_code": (
+                        "SELECT * FROM {{ ref('positions') }} "
+                        "WHERE ABS(market_value - shares * price) > 0.01"
+                    ),
+                    # No test_metadata - this is what makes it a singular test
+                },
+            },
+            "sources": {},
+        }
+        manifest_file = tmp_path / "manifest.json"
+        manifest_file.write_text(json.dumps(manifest))
+
+        resp = await client.post(
+            f"/api/v1/sync/dbt?manifest_path={manifest_file}&owner_team_id={team_id}"
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["guarantees_extracted"] == 1
+
+        # Verify asset has singular test as custom guarantee
+        assets_resp = await client.get(f"/api/v1/assets?owner={team_id}")
+        assets = assets_resp.json()["results"]
+        asset = next(a for a in assets if "positions_singular" in a["fqn"])
+        asset_detail = await client.get(f"/api/v1/assets/{asset['id']}")
+        metadata = asset_detail.json().get("metadata", {})
+
+        assert "guarantees" in metadata
+        assert "custom" in metadata["guarantees"]
+        assert len(metadata["guarantees"]["custom"]) == 1
+
+        singular_test = metadata["guarantees"]["custom"][0]
+        assert singular_test["type"] == "singular"
+        assert singular_test["name"] == "assert_market_value_consistency"
+        assert singular_test["description"] == "Validates market_value = shares * price"
+        assert "market_value" in singular_test["sql"]
+        assert "shares * price" in singular_test["sql"]
+
+
+class TestDbtAutoCreateProposals:
+    """Tests for auto_create_proposals flag in dbt upload."""
+
+    async def test_auto_create_proposals_creates_proposal_for_breaking_change(
+        self, client: AsyncClient
+    ):
+        """auto_create_proposals should create proposal when schema has breaking changes."""
+        # Step 1: Create team
+        team_resp = await client.post("/api/v1/teams", json={"name": "proposals-test-team"})
+        assert team_resp.status_code == 201
+        team_id = team_resp.json()["id"]
+
+        # Step 2: Create asset with initial contract (id, name, email columns)
+        asset_resp = await client.post(
+            "/api/v1/assets",
+            json={"fqn": "test.main.users", "owner_team_id": team_id},
+        )
+        assert asset_resp.status_code == 201
+        asset_id = asset_resp.json()["id"]
+
+        # Publish initial contract
+        contract_resp = await client.post(
+            f"/api/v1/assets/{asset_id}/contracts?published_by={team_id}",
+            json={
+                "version": "1.0.0",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "integer"},
+                        "name": {"type": "string"},
+                        "email": {"type": "string"},
+                    },
+                    "required": [],
+                },
+                "compatibility_mode": "backward",
+            },
+        )
+        assert contract_resp.status_code == 201
+
+        # Step 3: Upload manifest with breaking change (removes email column)
+        manifest = {
+            "nodes": {
+                "model.project.users": {
+                    "resource_type": "model",
+                    "database": "test",
+                    "schema": "main",
+                    "name": "users",
+                    "columns": {
+                        "id": {"data_type": "integer"},
+                        "name": {"data_type": "string"},
+                        # email column removed - breaking change!
+                    },
+                }
+            },
+            "sources": {},
+        }
+
+        upload_resp = await client.post(
+            "/api/v1/sync/dbt/upload",
+            json={
+                "manifest": manifest,
+                "owner_team_id": team_id,
+                "conflict_mode": "overwrite",
+                "auto_create_proposals": True,
+            },
+        )
+        assert upload_resp.status_code == 200
+        result = upload_resp.json()
+
+        # Verify proposal was created
+        assert result["proposals"]["created"] == 1
+        assert len(result["proposals"]["details"]) == 1
+
+        proposal_info = result["proposals"]["details"][0]
+        assert proposal_info["asset_fqn"] == "test.main.users"
+        assert proposal_info["breaking_changes_count"] >= 1
+        assert proposal_info["change_type"] in ["major", "patch", "minor"]
+
+        # Verify proposal exists via API
+        proposal_id = proposal_info["proposal_id"]
+        get_resp = await client.get(f"/api/v1/proposals/{proposal_id}")
+        assert get_resp.status_code == 200
+        proposal = get_resp.json()
+        assert proposal["asset_id"] == asset_id
+        assert proposal["status"] == "pending"
+
+    async def test_auto_create_proposals_no_proposal_for_compatible_change(
+        self, client: AsyncClient
+    ):
+        """auto_create_proposals should not create proposal for compatible changes."""
+        # Create team and asset
+        team_resp = await client.post("/api/v1/teams", json={"name": "proposals-compat-team"})
+        team_id = team_resp.json()["id"]
+
+        asset_resp = await client.post(
+            "/api/v1/assets",
+            json={"fqn": "test.main.orders", "owner_team_id": team_id},
+        )
+        asset_id = asset_resp.json()["id"]
+
+        # Publish initial contract
+        await client.post(
+            f"/api/v1/assets/{asset_id}/contracts?published_by={team_id}",
+            json={
+                "version": "1.0.0",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "integer"},
+                    },
+                    "required": [],
+                },
+                "compatibility_mode": "backward",
+            },
+        )
+
+        # Upload manifest with compatible change (add new column)
+        manifest = {
+            "nodes": {
+                "model.project.orders": {
+                    "resource_type": "model",
+                    "database": "test",
+                    "schema": "main",
+                    "name": "orders",
+                    "columns": {
+                        "id": {"data_type": "integer"},
+                        "amount": {"data_type": "numeric"},  # New column - compatible
+                    },
+                }
+            },
+            "sources": {},
+        }
+
+        upload_resp = await client.post(
+            "/api/v1/sync/dbt/upload",
+            json={
+                "manifest": manifest,
+                "owner_team_id": team_id,
+                "conflict_mode": "overwrite",
+                "auto_create_proposals": True,
+            },
+        )
+        assert upload_resp.status_code == 200
+        result = upload_resp.json()
+
+        # No proposal should be created for compatible changes
+        assert result["proposals"]["created"] == 0
+        assert len(result["proposals"]["details"]) == 0
+
+    async def test_auto_create_proposals_disabled_by_default(self, client: AsyncClient):
+        """auto_create_proposals should be disabled by default."""
+        # Create team and asset
+        team_resp = await client.post("/api/v1/teams", json={"name": "proposals-default-team"})
+        team_id = team_resp.json()["id"]
+
+        asset_resp = await client.post(
+            "/api/v1/assets",
+            json={"fqn": "test.main.products", "owner_team_id": team_id},
+        )
+        asset_id = asset_resp.json()["id"]
+
+        # Publish initial contract
+        await client.post(
+            f"/api/v1/assets/{asset_id}/contracts?published_by={team_id}",
+            json={
+                "version": "1.0.0",
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "integer"},
+                        "sku": {"type": "string"},
+                    },
+                    "required": [],
+                },
+                "compatibility_mode": "backward",
+            },
+        )
+
+        # Upload manifest with breaking change but WITHOUT auto_create_proposals
+        manifest = {
+            "nodes": {
+                "model.project.products": {
+                    "resource_type": "model",
+                    "database": "test",
+                    "schema": "main",
+                    "name": "products",
+                    "columns": {
+                        "id": {"data_type": "integer"},
+                        # sku removed - breaking change!
+                    },
+                }
+            },
+            "sources": {},
+        }
+
+        upload_resp = await client.post(
+            "/api/v1/sync/dbt/upload",
+            json={
+                "manifest": manifest,
+                "owner_team_id": team_id,
+                "conflict_mode": "overwrite",
+                # auto_create_proposals NOT specified (defaults to False)
+            },
+        )
+        assert upload_resp.status_code == 200
+        result = upload_resp.json()
+
+        # No proposal should be created when flag is not set
+        assert result["proposals"]["created"] == 0

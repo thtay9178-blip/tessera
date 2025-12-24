@@ -1,5 +1,6 @@
 """FastAPI application entry point."""
 
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -12,11 +13,13 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from starlette.exceptions import HTTPException
+from starlette.middleware.sessions import SessionMiddleware
 
 from tessera.api import (
     api_keys,
     assets,
     audit,
+    audits,
     contracts,
     dependencies,
     impact,
@@ -25,6 +28,7 @@ from tessera.api import (
     schemas,
     sync,
     teams,
+    users,
     webhooks,
 )
 from tessera.api.errors import (
@@ -36,15 +40,33 @@ from tessera.api.errors import (
     validation_exception_handler,
 )
 from tessera.api.rate_limit import limiter, rate_limit_exceeded_handler
-from tessera.config import settings
+from tessera.config import DEFAULT_SESSION_SECRET, settings
 from tessera.db import init_db
 from tessera.db.database import dispose_engine, get_async_session_maker
 from tessera.web import router as web_router
+from tessera.web.routes import register_login_required_handler
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler."""
+    # Security warnings
+    if (
+        settings.environment == "production"
+        and settings.session_secret_key == DEFAULT_SESSION_SECRET
+    ):
+        logger.warning(
+            "SECURITY WARNING: Using default session secret key in production! "
+            "Set SESSION_SECRET_KEY environment variable to a secure random value."
+        )
+    if settings.environment == "production" and settings.auth_disabled:
+        logger.warning(
+            "SECURITY WARNING: Authentication is disabled in production! "
+            "Set AUTH_DISABLED=false for production deployments."
+        )
+
     await init_db()
     yield
     # Clean up database connections on shutdown
@@ -62,6 +84,9 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 # Only add rate limiting middleware if enabled
 if settings.rate_limit_enabled:
     app.add_middleware(SlowAPIMiddleware)
+
+# Session middleware for web UI authentication
+app.add_middleware(SessionMiddleware, secret_key=settings.session_secret_key)
 
 # Request ID middleware (must be added first to wrap all other middleware)
 app.add_middleware(RequestIDMiddleware)
@@ -85,10 +110,15 @@ app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore
 app.add_exception_handler(ValidationError, validation_exception_handler)  # type: ignore[arg-type]
 app.add_exception_handler(Exception, generic_exception_handler)
 
+# Register login required handler for web UI routes
+register_login_required_handler(app)
+
 # API v1 router
 api_v1 = APIRouter(prefix="/api/v1")
+api_v1.include_router(users.router, prefix="/users", tags=["users"])
 api_v1.include_router(teams.router, prefix="/teams", tags=["teams"])
 api_v1.include_router(assets.router, prefix="/assets", tags=["assets"])
+api_v1.include_router(audits.router, prefix="/assets", tags=["audits"])
 api_v1.include_router(dependencies.router, prefix="/assets", tags=["dependencies"])
 api_v1.include_router(impact.router, prefix="/assets", tags=["impact"])
 api_v1.include_router(contracts.router, prefix="/contracts", tags=["contracts"])
