@@ -10,18 +10,16 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+  # Use local mypy hook to match CI exactly (runs on full src/tessera/ directory)
+  - repo: local
     hooks:
       - id: mypy
-        additional_dependencies:
-          - types-jsonschema
-          - types-PyYAML
-          - pydantic>=2.0
-          - sqlalchemy>=2.0
-          - fastapi>=0.100
-        args: [--ignore-missing-imports]
+        name: mypy
+        entry: uv run mypy src/tessera/
+        language: system
+        types: [python]
         files: ^src/tessera/
+        pass_filenames: false
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
