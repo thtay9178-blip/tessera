@@ -1,10 +1,12 @@
 # Tessera Development - Full environment with seeder and auth enabled
-# Usage: docker compose -f docker-compose.dev.yml --project-name tessera-dev up
+# Usage: docker compose -f docker-compose.dev.yml -p tessera-dev up
 #
-# For quick start (regular mode): docker compose up
+# This uses .env.docker (committed to git) - works on fresh clone!
+# For production: cp .env.example .env && docker compose up
+#
 # Run both simultaneously:
-#   docker compose up -d                                           # Regular on :8000
-#   docker compose -f docker-compose.dev.yml -p tessera-dev up -d  # Demo on :8001
+#   docker compose up -d                                           # Production on :8000 (requires .env)
+#   docker compose -f docker-compose.dev.yml -p tessera-dev up -d  # Demo on :8001 (uses .env.docker)
 
 services:
   db:
@@ -41,6 +43,8 @@ services:
     build: .
     ports:
       - "8001:8000"
+    env_file:
+      - .env.docker
     environment:
       DATABASE_URL: postgresql+asyncpg://tessera:tessera@db:5432/tessera
       REDIS_URL: redis://redis:6379/0

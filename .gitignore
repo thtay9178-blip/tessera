@@ -28,8 +28,10 @@ ENV/
 # uv
 .uv/
 
-# Environment
+# Environment (user's local .env is ignored, .env.docker is committed for Docker)
 .env
+!.env.docker
+!.env.example
 
 # IDE
 .idea/

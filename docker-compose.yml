@@ -1,6 +1,7 @@
 # Tessera - Production-ready docker-compose
-# Usage: docker compose up
+# Usage: cp .env.example .env && docker compose up
 #
+# Requires: .env file (copy from .env.example and customize)
 # For demo with sample data: docker compose -f docker-compose.dev.yml -p tessera-dev up
 
 services:
@@ -38,6 +39,8 @@ services:
     build: .
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql+asyncpg://tessera:tessera@db:5432/tessera
       REDIS_URL: redis://redis:6379/0
