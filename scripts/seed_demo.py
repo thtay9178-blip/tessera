@@ -1129,92 +1129,180 @@ def report_dbt_test_results() -> int:
 
 
 def create_proposals(team_ids: dict[str, str]) -> int:
-    """Create a few proposals by publishing breaking changes to existing contracts."""
+    """Create proposals with breaking changes that affect demo user teams.
+
+    Creates proposals where:
+    - data-platform team is a consumer (affects admin and team_admin users)
+    - marketing-analytics team is a consumer (affects regular user)
+
+    Strategy:
+    1. Use Kafka assets (which have rich schemas) owned by non-demo teams
+    2. Register demo teams as consumers
+    3. Publish breaking changes to create proposals
+    """
     print("\nCreating sample proposals (breaking changes)...")
     proposals_created = 0
 
-    # Get registrations to find contracts with consumers
+    # Demo user teams that need to see notifications
+    demo_consumer_teams = {
+        "data-platform": team_ids.get("data-platform"),
+        "marketing-analytics": team_ids.get("marketing-analytics"),
+    }
+
+    # Teams that can own assets (not demo consumer teams for this purpose)
+    # sales-ops owns kafka.orders.order_created
+    # product-analytics owns OpenAPI assets
+
+    # Find assets with contracts that have rich schemas
+    # Focus on Kafka and OpenAPI assets which we created with known schemas
     try:
-        reg_resp = httpx.get(
-            f"{API_URL}/api/v1/registrations?limit=50", headers=get_headers(), timeout=10
+        # Get assets with contracts
+        assets_resp = httpx.get(
+            f"{API_URL}/api/v1/assets?limit=50",
+            headers=get_headers(),
+            timeout=10,
         )
-        if reg_resp.status_code != 200:
-            print("  Could not fetch registrations")
+        if assets_resp.status_code != 200:
+            print("  Could not fetch assets")
             return 0
 
-        registrations = reg_resp.json().get("results", [])
-        if not registrations:
-            print("  No registrations found")
-            return 0
+        all_assets = assets_resp.json().get("results", [])
 
-        # Get unique contract IDs from registrations
-        contract_ids = list({r["contract_id"] for r in registrations})[:10]
+        # Find suitable assets with active contracts (not owned by demo consumer teams)
+        target_items = []
+        for asset in all_assets:
+            asset_id = asset["id"]
+            fqn = asset["fqn"]
+            owner_team_id = asset["owner_team_id"]
 
-        # Find contracts with good schemas for breaking changes
-        target_contracts = []
-        for contract_id in contract_ids:
+            # Skip if owned by a demo consumer team (we want demo teams as consumers, not owners)
+            if owner_team_id in demo_consumer_teams.values():
+                continue
+
+            # Get contracts for this asset
+            contracts_resp = httpx.get(
+                f"{API_URL}/api/v1/assets/{asset_id}/contracts",
+                headers=get_headers(),
+                timeout=10,
+            )
+            if contracts_resp.status_code != 200:
+                continue
+
+            contracts_data = contracts_resp.json()
+            contracts = contracts_data.get("results", [])
+            if not contracts:
+                continue
+
+            # Get the active contract
+            active_contract = None
+            for c in contracts:
+                if c.get("status") == "active":
+                    active_contract = c
+                    break
+
+            if not active_contract:
+                continue
+
+            # Get full contract details
             contract_resp = httpx.get(
-                f"{API_URL}/api/v1/contracts/{contract_id}",
+                f"{API_URL}/api/v1/contracts/{active_contract['id']}",
                 headers=get_headers(),
                 timeout=10,
             )
             if contract_resp.status_code != 200:
                 continue
 
-            contract = contract_resp.json()
-            # Use 'schema' field from single contract response
-            schema = contract.get("schema", {})
-            props = schema.get("properties", {})
+            contract_detail = contract_resp.json()
+            # API returns schema_def not schema
+            schema = contract_detail.get("schema_def") or contract_detail.get("schema", {})
 
-            if len(props) >= 2:  # Need at least 2 properties to remove one
-                target_contracts.append(contract)
-                if len(target_contracts) >= 3:
+            # Accept any contract with a schema
+            if schema and schema.get("type") == "object":
+                target_items.append(
+                    {
+                        "asset": asset,
+                        "contract": contract_detail,
+                    }
+                )
+                print(f"    Found candidate: {fqn}")
+                if len(target_items) >= 4:
                     break
 
-        if len(target_contracts) < 3:
-            print(f"  Only found {len(target_contracts)} contracts with enough properties")
+        if not target_items:
+            print("  No assets with contracts found")
             return 0
 
-        for contract in target_contracts:
-            asset_id = contract["asset_id"]
-            current_version = contract.get("version", "1.0.0")
-            current_schema = contract.get("schema", {})
+        print(f"  Found {len(target_items)} assets suitable for proposals")
 
-            # Get asset for owner_team_id and fqn
-            asset_resp = httpx.get(
-                f"{API_URL}/api/v1/assets/{asset_id}", headers=get_headers(), timeout=10
-            )
-            if asset_resp.status_code != 200:
+        # Step 1: Register demo teams as consumers
+        print("  Registering demo teams as consumers...")
+        demo_team_list = list(demo_consumer_teams.items())
+        for i, item in enumerate(target_items):
+            contract = item["contract"]
+            contract_id = contract["id"]
+
+            # Alternate between demo teams
+            team_name, team_id = demo_team_list[i % len(demo_team_list)]
+            if not team_id:
                 continue
 
-            asset = asset_resp.json()
+            # contract_id is a query param, consumer_team_id goes in JSON body
+            reg_resp = httpx.post(
+                f"{API_URL}/api/v1/registrations?contract_id={contract_id}",
+                json={
+                    "consumer_team_id": team_id,
+                },
+                headers=get_headers(),
+                timeout=10,
+            )
+            if reg_resp.status_code in (200, 201):
+                print(f"    Registered {team_name} -> {contract_id[:8]}...")
+            elif reg_resp.status_code == 409:
+                print(f"    {team_name} already registered -> {contract_id[:8]}...")
+            else:
+                print(f"    Failed: {reg_resp.status_code} - {reg_resp.text[:50]}")
+
+        # Step 2: Create breaking changes
+        print("  Creating breaking changes to trigger proposals...")
+        for idx, item in enumerate(target_items):
+            asset = item["asset"]
+            contract = item["contract"]
+
+            asset_id = asset["id"]
             fqn = asset["fqn"]
             owner_team_id = asset["owner_team_id"]
+            current_version = contract.get("version", "1.0.0")
+            # API returns schema_def not schema
+            current_schema = contract.get("schema_def") or contract.get("schema", {})
 
-            if not current_schema.get("properties"):
-                continue
-
-            # Create a breaking change: remove a property
             props = current_schema.get("properties", {})
-            if len(props) < 2:
-                continue
+            required_list = list(current_schema.get("required", []))
 
-            # Remove one property (breaking change)
+            # Create a breaking change by adding a new required field
+            # This is a breaking change for backward compatibility
+            new_field_name = f"deprecated_field_{idx}"
             new_props = dict(props)
-            removed_col = list(new_props.keys())[-1]  # Remove last property
-            del new_props[removed_col]
+            new_props[new_field_name] = {
+                "type": "string",
+                "description": "Deprecated field to be removed",
+            }
+            required_list.append(new_field_name)
 
+            # Build new schema
             new_schema = {
                 "type": "object",
                 "properties": new_props,
-                "required": current_schema.get("required", []),
+                "required": required_list,
             }
 
             # Bump major version
-            parts = current_version.split(".")
-            new_version = f"{int(parts[0]) + 1}.0.0"
+            try:
+                parts = current_version.split(".")
+                new_version = f"{int(parts[0]) + 1}.0.0"
+            except (ValueError, IndexError):
+                new_version = "2.0.0"
 
-            print(f"  Creating proposal for {fqn} (removing '{removed_col}')...")
+            print(f"    {fqn}: Adding required field '{new_field_name}' -> v{new_version}")
 
             try:
                 pub_resp = httpx.post(
@@ -1227,21 +1315,31 @@ def create_proposals(team_ids: dict[str, str]) -> int:
                     headers=get_headers(),
                     timeout=30,
                 )
+
                 if pub_resp.status_code == 201:
                     result = pub_resp.json()
-                    if result.get("action") == "proposal_created":
+                    action = result.get("action", "unknown")
+                    if action == "proposal_created":
                         proposal_id = result["proposal"]["id"]
-                        print(f"    Created proposal {proposal_id[:8]}...")
+                        print(f"      Proposal created: {proposal_id[:8]}...")
                         proposals_created += 1
+                    elif action == "published":
+                        print("      Published (no consumers registered)")
                     else:
-                        print(f"    No proposal needed (action: {result.get('action')})")
+                        print(f"      Action: {action}")
                 else:
-                    print(f"    Failed: {pub_resp.status_code}")
+                    try:
+                        err = pub_resp.json()
+                        msg = err.get("message") or err.get("error", {}).get("message", "")
+                        print(f"      Failed: {pub_resp.status_code} - {msg[:80]}")
+                    except Exception:
+                        print(f"      Failed: {pub_resp.status_code}")
+
             except httpx.RequestError as e:
-                print(f"    Error: {e}")
+                print(f"      Error: {e}")
 
     except httpx.RequestError as e:
-        print(f"  Error fetching assets: {e}")
+        print(f"  Error: {e}")
 
     return proposals_created
 
