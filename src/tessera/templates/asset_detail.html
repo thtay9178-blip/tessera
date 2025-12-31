@@ -51,14 +51,14 @@
   </div>
 </section>
 
-<section>
+<section id="asset-dependencies-section">
   <h2>Dependencies (Upstream)</h2>
   <div id="asset-dependencies">
     <div class="loading">Loading...</div>
   </div>
 </section>
 
-<section>
+<section id="asset-dependents-section">
   <h2>Dependents (Downstream)</h2>
   <div id="asset-dependents">
     <div class="loading">Loading...</div>
@@ -235,8 +235,15 @@ function toggleSql(id) {
 // Asset types that support dbt test audit history
 const DBT_RESOURCE_TYPES = ['model', 'source', 'seed', 'snapshot'];
 
+// Asset types that have lineage relationships (dependencies/dependents)
+const LINEAGE_RESOURCE_TYPES = ['model', 'source', 'seed', 'snapshot'];
+
 function isAuditableAssetType(resourceType) {
   return DBT_RESOURCE_TYPES.includes(resourceType);
+}
+
+function hasLineage(resourceType) {
+  return LINEAGE_RESOURCE_TYPES.includes(resourceType);
 }
 
 async function loadAuditHistory(resourceType) {
@@ -915,94 +922,108 @@ async function loadAssetDetail() {
       `;
     }
 
-    // Dependencies
+    // Dependencies - only show for asset types with lineage
+    const depsSection = document.getElementById('asset-dependencies-section');
     const depsContainer = document.getElementById('asset-dependencies');
-    try {
-      const depsData = await api.getAssetDependencies(assetId);
-      const deps = depsData.results || [];
 
-      if (deps.length === 0) {
-        // Try to get dependencies from metadata
-        const metaDeps = metadata.depends_on || [];
-        if (metaDeps.length > 0) {
-          // Search for assets by FQN to make them clickable
-          const depLinks = await Promise.all(metaDeps.map(async (fqn) => {
-            try {
-              const searchResult = await api.listAssets({ fqn: fqn, limit: 1 });
-              if (searchResult.results && searchResult.results.length > 0) {
-                const depAsset = searchResult.results[0];
-                return `<li><a href="/assets/${depAsset.id}"><code>${escapeHtml(fqn)}</code></a></li>`;
-              }
-            } catch (e) { /* ignore */ }
-            return `<li><code>${escapeHtml(fqn)}</code> <span style="color: var(--gray);">(not in Tessera)</span></li>`;
-          }));
-          depsContainer.innerHTML = `
-            <ul>
-              ${depLinks.join('')}
-            </ul>
-          `;
+    if (!hasLineage(resourceType)) {
+      depsSection.style.display = 'none';
+    } else {
+      depsSection.style.display = 'block';
+      try {
+        const depsData = await api.getAssetDependencies(assetId);
+        const deps = depsData.results || [];
+
+        if (deps.length === 0) {
+          // Try to get dependencies from metadata
+          const metaDeps = metadata.depends_on || [];
+          if (metaDeps.length > 0) {
+            // Search for assets by FQN to make them clickable
+            const depLinks = await Promise.all(metaDeps.map(async (fqn) => {
+              try {
+                const searchResult = await api.listAssets({ fqn: fqn, limit: 1 });
+                if (searchResult.results && searchResult.results.length > 0) {
+                  const depAsset = searchResult.results[0];
+                  return `<li><a href="/assets/${depAsset.id}"><code>${escapeHtml(fqn)}</code></a></li>`;
+                }
+              } catch (e) { /* ignore */ }
+              return `<li><code>${escapeHtml(fqn)}</code> <span style="color: var(--gray);">(not in Tessera)</span></li>`;
+            }));
+            depsContainer.innerHTML = `
+              <ul>
+                ${depLinks.join('')}
+              </ul>
+            `;
+          } else {
+            depsContainer.innerHTML = '<div class="empty">No upstream dependencies.</div>';
+          }
         } else {
-          depsContainer.innerHTML = '<div class="empty">No upstream dependencies.</div>';
-        }
-      } else {
-        depsContainer.innerHTML = `
-          <table>
-            <thead>
-              <tr>
-                <th>Depends On</th>
-                <th>Type</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${deps.map(d => `
+          depsContainer.innerHTML = `
+            <table>
+              <thead>
                 <tr>
-                  <td><a href="/assets/${d.depends_on_asset_id}">${escapeHtml(d.depends_on_fqn || d.depends_on_asset_id)}</a></td>
-                  <td>${escapeHtml(d.dependency_type)}</td>
-                  <td>${formatDate(d.created_at)}</td>
+                  <th>Depends On</th>
+                  <th>Type</th>
+                  <th>Created</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
+              </thead>
+              <tbody>
+                ${deps.map(d => `
+                  <tr>
+                    <td><a href="/assets/${d.depends_on_asset_id}">${escapeHtml(d.depends_on_fqn || d.depends_on_asset_id)}</a></td>
+                    <td>${escapeHtml(d.dependency_type)}</td>
+                    <td>${formatDate(d.created_at)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+      } catch (e) {
+        depsContainer.innerHTML = '<div class="empty">No dependencies.</div>';
       }
-    } catch (e) {
-      depsContainer.innerHTML = '<div class="empty">No dependencies.</div>';
     }
 
-    // Downstream dependents (assets that depend on this one)
+    // Downstream dependents - only show for asset types with lineage
+    const dependentsSection = document.getElementById('asset-dependents-section');
     const dependentsContainer = document.getElementById('asset-dependents');
-    try {
-      const lineageData = await api.getAssetLineage(assetId);
-      const downstreamAssets = lineageData.downstream_assets || [];
 
-      if (downstreamAssets.length === 0) {
-        dependentsContainer.innerHTML = '<div class="empty">No downstream dependents. No models reference this asset.</div>';
-      } else {
-        dependentsContainer.innerHTML = `
-          <p style="margin-bottom: 0.5rem;"><strong>${downstreamAssets.length}</strong> model(s) depend on this asset:</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Dependent Asset</th>
-                <th>Type</th>
-                <th>Owner Team</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${downstreamAssets.map(d => `
+    if (!hasLineage(resourceType)) {
+      dependentsSection.style.display = 'none';
+    } else {
+      dependentsSection.style.display = 'block';
+      try {
+        const lineageData = await api.getAssetLineage(assetId);
+        const downstreamAssets = lineageData.downstream_assets || [];
+
+        if (downstreamAssets.length === 0) {
+          dependentsContainer.innerHTML = '<div class="empty">No downstream dependents. No models reference this asset.</div>';
+        } else {
+          dependentsContainer.innerHTML = `
+            <p style="margin-bottom: 0.5rem;"><strong>${downstreamAssets.length}</strong> model(s) depend on this asset:</p>
+            <table>
+              <thead>
                 <tr>
-                  <td><a href="/assets/${d.asset_id}">${escapeHtml(d.asset_fqn || d.asset_id)}</a></td>
-                  <td>${escapeHtml(d.dependency_type || 'consumes')}</td>
-                  <td>${escapeHtml(d.owner_team || 'Unknown')}</td>
+                  <th>Dependent Asset</th>
+                  <th>Type</th>
+                  <th>Owner Team</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
+              </thead>
+              <tbody>
+                ${downstreamAssets.map(d => `
+                  <tr>
+                    <td><a href="/assets/${d.asset_id}">${escapeHtml(d.asset_fqn || d.asset_id)}</a></td>
+                    <td>${escapeHtml(d.dependency_type || 'consumes')}</td>
+                    <td>${escapeHtml(d.owner_team || 'Unknown')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+      } catch (e) {
+        dependentsContainer.innerHTML = '<div class="empty">No downstream dependents.</div>';
       }
-    } catch (e) {
-      dependentsContainer.innerHTML = '<div class="empty">No downstream dependents.</div>';
     }
   } catch (error) {
     showError(error.message);
