@@ -334,8 +334,8 @@ async function loadAuditEvents() {
       <table class="audit-table">
         <thead>
           <tr>
-            <th style="width: 140px;">Timestamp</th>
-            <th style="width: 100px;">Type</th>
+            <th style="width: 180px;">Timestamp</th>
+            <th style="width: 120px;">Type</th>
             <th style="width: 160px;">Action</th>
             <th style="min-width: 200px;">Details</th>
           </tr>
@@ -343,7 +343,7 @@ async function loadAuditEvents() {
         <tbody>
           ${data.results.map(e => `
             <tr>
-              <td style="white-space: nowrap; font-size: 0.8rem;">${formatDate(e.occurred_at)}</td>
+              <td style="white-space: nowrap; font-size: 0.8rem; padding-right: 1rem;">${formatDate(e.occurred_at)}</td>
               <td><span class="status">${escapeHtml(e.entity_type.toUpperCase())}</span></td>
               <td><span class="status ${getActionClass(e.action)}">${escapeHtml(e.action.toUpperCase())}</span></td>
               <td style="font-size: 0.8rem;">${formatAuditDetails(e)}</td>

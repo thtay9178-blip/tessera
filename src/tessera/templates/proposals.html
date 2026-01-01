@@ -199,7 +199,7 @@ async function loadProposals() {
                   : '<span style="color: var(--gray);">N/A</span>'
                 }
               </td>
-              <td>${formatDate(p.proposed_at || p.created_at)}</td>
+              <td style="white-space: nowrap;">${formatDate(p.proposed_at || p.created_at)}</td>
               <td>
                 <div style="display: flex; gap: 0.5rem; white-space: nowrap;">
                   <a href="/proposals/${p.id}" class="btn-secondary" style="padding: 0.25rem 0.5rem;">View</a>

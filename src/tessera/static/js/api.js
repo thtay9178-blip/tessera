@@ -360,13 +360,16 @@ const api = new TesseraAPI();
 function formatDate(dateString) {
   if (!dateString) return '-';
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
+  const dateStr = date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+  });
+  const timeStr = date.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
+  return `${dateStr}, ${timeStr}`;
 }
 
 function truncate(str, length = 50) {
